@@ -54,8 +54,8 @@
 // works, because that's what kLetterRects (further down) defines shapes for.
 // -----------------------------------------------------------------------------
 
-std::string displayString = "Your name here"; 						// the text that gets spelled out in 3D letters
-std::string titleString = "CPSC 484 Demo OpenGL Application";       // the text shown in the OS window's title bar
+std::string displayString = "Riley Berry"; 						// the text that gets spelled out in 3D letters
+std::string titleString = "Assignment 0 - Riley Berry";       // the text shown in the OS window's title bar
 
 /* *************************************************** */
 
