@@ -34,6 +34,10 @@
 #include <iostream>        // std::cerr / std::cout for error and debug messages
 #include <string>          // std::string -- used by isRunningUnderWSL() below, and by the titleString you'll add next
 
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+
 #include "shader.h"
 #include "gl_objects.h"
 
@@ -75,11 +79,14 @@ const unsigned int SCR_HEIGHT = 600; // window height in pixels
 // const char* fragmentShaderSource = R"GLSL(...)GLSL";
 
 
+
+
 // TODO: (2.2): declare whatever state your mesh needs. At minimum you'll want
 // somewhere to put your vertex data (positions + normals) and your index
 // data once you've decided on a layout -- see Section 2.2 for the required
 // float vertices[] / unsigned int indices[] shape. You'll also need VAO/VBO/
 // EBO ids once you get to uploading that data to the GPU.
+
 
 // TODO: (2.4/2.5/2.6): declare whatever state your input handling needs to
 // read and modify -- e.g. the cube's current color, a list of colors to
@@ -135,7 +142,7 @@ int main() {
 
     // TODO: (2.1): pass your titleString.c_str() as the window title below
     // instead of the placeholder "Assignment 1" literal.
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Assignment 1", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, titleString.c_str(), nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -159,6 +166,8 @@ int main() {
     // and fragmentShaderSource exist above.
     // unsigned int shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
+    Shader shaderProgram("default.vert", "default.frag");
+
     glEnable(GL_DEPTH_TEST); // near surfaces should hide far ones -- you'll want this once you have a 3D cube
 
     // TODO: (2.2): build your cube's vertex/index data and upload it to the
@@ -166,6 +175,86 @@ int main() {
     // glBufferData / glVertexAttribPointer / glEnableVertexAttribArray),
     // once you've declared the arrays and layout above. This happens once,
     // before the render loop -- not every frame.
+
+    // Vertices coordinates (COORDINATES / COLORS / TexCoord / NORMALS)
+    GLfloat vertices[] = {
+    // POSITION            / COLOR             / TEXCOORD  / NORMALS
+    // Front Face (Z = 1.0f)
+    -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  0.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  0.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  0.0f,  1.0f,
+
+    // Back Face (Z = -1.0f)
+    -1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  0.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  0.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  0.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f, -1.0f,
+
+    // Left Face (X = -1.0f)
+    -1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,  -1.0f,  0.0f,  0.0f,
+    -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,  -1.0f,  0.0f,  0.0f,
+    -1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  -1.0f,  0.0f,  0.0f,
+    -1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,  -1.0f,  0.0f,  0.0f,
+
+    // Right Face (X = 1.0f)
+     1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   1.0f,  0.0f,  0.0f,
+     1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   1.0f,  0.0f,  0.0f,
+     1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   1.0f,  0.0f,  0.0f,
+     1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   1.0f,  0.0f,  0.0f,
+
+    // Top Face (Y = 1.0f)
+    -1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  1.0f,  0.0f,
+     1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  1.0f,  0.0f,
+     1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  1.0f,  0.0f,
+    -1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  1.0f,  0.0f,
+
+    // Bottom Face (Y = -1.0f)
+    -1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f, -1.0f,  0.0f,
+     1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f, -1.0f,  0.0f,
+     1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f, -1.0f,  0.0f,
+    -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f, -1.0f,  0.0f
+};
+
+// Indices for vertices order (6 indices per face * 6 faces = 36 total)
+GLuint indices[] = {
+    0, 1, 2,     0, 2, 3,    // Front
+    4, 5, 6,     4, 6, 7,    // Back
+    8, 9, 10,    8, 10, 11,  // Left
+    12, 13, 14,  12, 14, 15, // Right
+    16, 17, 18,  16, 18, 19, // Top
+    20, 21, 22,  20, 22, 23  // Bottom
+};
+
+
+    // Generates Vertex Array Object and binds it
+    VAO VAO1;
+    VAO1.Bind();
+
+    VBO VBO1(vertices, sizeof(vertices)); // Generates Vertex Buffer Object and links it to vertices
+    EBO EBO1(indices, sizeof(indices));   // Generates Element Buffer Object and links it to indices
+
+    // Stride is now 11 * sizeof(float) because each vertex contains 11 floats total
+    GLsizei stride = 11 * sizeof(float);
+
+    // Links VBO attributes to VAO1
+    VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, stride, (void*)0);                          // Position (0)
+    VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, stride, (void*)(3 * sizeof(float)));        // Color (1)
+    VAO1.LinkAttrib(VBO1, 2, 2, GL_FLOAT, stride, (void*)(6 * sizeof(float)));        // TexCoord (2)
+    VAO1.LinkAttrib(VBO1, 3, 3, GL_FLOAT, stride, (void*)(8 * sizeof(float)));        // Normals (3)
+
+
+    // Unbind all to prevent accidentally modifying them
+    VAO1.Unbind();
+    VBO1.Unbind();
+    EBO1.Unbind();
+
+    // Gets ID of uniform called "scale"
+    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
+
+    // Variables that help the rotation of the pyramid
+    float rotation = 0.0f;
+    double prevTime = glfwGetTime();
 
     // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
     while (!glfwWindowShouldClose(window)) {
@@ -183,6 +272,47 @@ int main() {
         // render loop that was specific to drawing letters -- yours will be
         // specific to drawing (and rotating, and recoloring, and relighting)
         // your cube instead.
+		
+       shaderProgram.Activate();
+
+// Simple timer
+		double crntTime = glfwGetTime();
+		if (crntTime - prevTime >= 1 / 60)
+		{
+			rotation += 0.5f;
+			prevTime = crntTime;
+		}
+
+		// Initializes matrices so they are not the null matrix
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 proj = glm::mat4(1.0f);
+
+		// Assigns different transformations to each matrix
+		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
+		proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+
+		// Outputs the matrices into the Vertex Shader
+		model *= glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
+		model *= glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+
+		int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		int projLoc = glGetUniformLocation(shaderProgram.ID, "proj");
+		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+
+		// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
+		glUniform1f(uniID, 0.5f);
+		// Binds texture so that is appears in rendering
+		//brickTex.Bind();
+		// Bind the VAO so OpenGL knows to use it
+		VAO1.Bind();
+
+		// Draw primitives, number of indices, datatype of indices, index of indices
+		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -192,6 +322,13 @@ int main() {
     // TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created
     // above, the same way the Assignment 0 demo cleans up its letter
     // buffers and shader program before glfwTerminate().
+    // Delete all the objects we've created
+	VAO1.Delete();
+	VBO1.Delete();
+	EBO1.Delete();
+	//brickTex.Delete();
+	shaderProgram.Delete();
+
     glfwTerminate();
     return 0;
 }
