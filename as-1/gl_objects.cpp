@@ -95,7 +95,7 @@ void EBO::Delete()
 
 //---------------------------------------------------------------------------------------------------------#include"VAO.h"
 // Textrue
-
+/*
 Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, GLenum pixelType)
 {
 	// Assigns the type of the texture ot the texture object
@@ -162,5 +162,6 @@ void Texture::Delete()
 {
 	glDeleteTextures(1, &ID);
 }
+*/
 
 //---------------------------------------------------------------------------------------------------------#include"VAO.h"

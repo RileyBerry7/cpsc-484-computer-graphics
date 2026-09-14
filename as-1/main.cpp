@@ -34,10 +34,13 @@
 #include <iostream>        // std::cerr / std::cout for error and debug messages
 #include <string>          // std::string -- used by isRunningUnderWSL() below, and by the titleString you'll add next
 
+#include "shader.h"
+#include "gl_objects.h"
+
 //TODO: (2.1) declare your own window-title string here. See Assignment 1
 // Instructions, Section 2.1. Something like:
 //     std::string titleString = "Fall 2026 - Assignment 1 - <Your Full Name>";
-std::string titleString "Fall 2022 - Assignment 1 - Riley Berry";
+std::string titleString  = "Fall 2022 - Assignment 1 - Riley Berry";
 
 // -----------------------------------------------------------------------------
 // FUNCTION PROTOTYPES
@@ -70,6 +73,7 @@ const unsigned int SCR_HEIGHT = 600; // window height in pixels
 //
 // const char* vertexShaderSource = R"GLSL(...)GLSL";
 // const char* fragmentShaderSource = R"GLSL(...)GLSL";
+
 
 // TODO: (2.2): declare whatever state your mesh needs. At minimum you'll want
 // somewhere to put your vertex data (positions + normals) and your index

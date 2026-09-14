@@ -1,12 +1,10 @@
 #ifndef GL_OBJECTS_H
 #define GL_OBJECTS_H
 
-#include<glad/glad.h>
+#include<glad.h>
 
 //---------------------------------------------------------------------------------
 // VBO
-
-#include<glad/glad.h>
 
 class VBO
 {
@@ -67,8 +65,9 @@ public:
 //---------------------------------------------------------------------------------
 // Texture
 
-#include<stb/stb_image.h>
-#include"shaderClass.h"
+/*
+#include <stb_image.h>
+#include "shaderClass.h"
 
 class Texture
 {
@@ -86,6 +85,6 @@ public:
 	// Deletes a texture
 	void Delete();
 };
-
+*/
 //---------------------------------------------------------------------------------
 #endif

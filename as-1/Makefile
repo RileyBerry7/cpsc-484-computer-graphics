@@ -31,8 +31,8 @@ else
 endif
 
 # Source and object files
-SRC = main.cpp glad.c
-OBJ = main.o glad.o
+SRC = main.cpp glad.c shader.cpp gl_objects.cpp
+OBJ = main.o glad.o shader.o gl_objects.o
 
 # Output executable name — must match what the assignment instructions
 # and submission checklist require.
