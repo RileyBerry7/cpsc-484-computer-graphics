@@ -10,11 +10,11 @@
 // demo (cpsc484_a1_demo_letterviewer.cpp / its line-by-line commented
 // twin). Re-typing it here wouldn't teach you anything new.
 //
-// Everything below a "// TODO (2.x)" comment is yours to write from scratch.
+// Everything below a "// TODO: (2.x)" comment is yours to write from scratch.
 // There are no predefined variables named cubeColor or lightPos waiting for
 // you to fill in a value -- you decide what state your program needs and how
 // to store it, the same way you'll have to on every assignment after this
-// one. The section numbers in the TODOs match the Assignment 1 Instructions
+// one. The section numbers in the TODO:s match the Assignment 1 Instructions
 // document; that's where the actual requirements and grading weights live.
 // This file only tells you WHERE things go, not WHAT to write.
 //
@@ -34,9 +34,10 @@
 #include <iostream>        // std::cerr / std::cout for error and debug messages
 #include <string>          // std::string -- used by isRunningUnderWSL() below, and by the titleString you'll add next
 
-// TODO (2.1): declare your own window-title string here. See Assignment 1
+//TODO: (2.1) declare your own window-title string here. See Assignment 1
 // Instructions, Section 2.1. Something like:
 //     std::string titleString = "Fall 2026 - Assignment 1 - <Your Full Name>";
+std::string titleString "Fall 2022 - Assignment 1 - Riley Berry";
 
 // -----------------------------------------------------------------------------
 // FUNCTION PROTOTYPES
@@ -54,7 +55,7 @@ unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc)
 const unsigned int SCR_WIDTH = 800;  // window width in pixels
 const unsigned int SCR_HEIGHT = 600; // window height in pixels
 
-// TODO (2.3): declare your vertex shader and fragment shader source here, as
+// TODO:: (2.3): declare your vertex shader and fragment shader source here, as
 // C++ raw string literals (see the Assignment 0 demo for the R"GLSL(...)GLSL"
 // pattern and why it's safer than a plain R"(...)"). At minimum your vertex
 // shader needs:
@@ -67,21 +68,16 @@ const unsigned int SCR_HEIGHT = 600; // window height in pixels
 //     than being flat silhouettes (see the demo's fragment shader for one
 //     way to do this -- yours doesn't have to match it exactly).
 //
-// const char* vertexShaderSource = R"GLSL(
-// ...
-// )GLSL";
-//
-// const char* fragmentShaderSource = R"GLSL(
-// ...
-// )GLSL";
+// const char* vertexShaderSource = R"GLSL(...)GLSL";
+// const char* fragmentShaderSource = R"GLSL(...)GLSL";
 
-// TODO (2.2): declare whatever state your mesh needs. At minimum you'll want
+// TODO: (2.2): declare whatever state your mesh needs. At minimum you'll want
 // somewhere to put your vertex data (positions + normals) and your index
 // data once you've decided on a layout -- see Section 2.2 for the required
 // float vertices[] / unsigned int indices[] shape. You'll also need VAO/VBO/
 // EBO ids once you get to uploading that data to the GPU.
 
-// TODO (2.4/2.5/2.6): declare whatever state your input handling needs to
+// TODO: (2.4/2.5/2.6): declare whatever state your input handling needs to
 // read and modify -- e.g. the cube's current color, a list of colors to
 // cycle through, the light's position, and the mesh's current rotation
 // angles. Nothing here is pre-named for you; pick names that make sense to
@@ -133,7 +129,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // required on macOS to get a core-profile context at all; harmless no-op on Windows/Linux
 
-    // TODO (2.1): pass your titleString.c_str() as the window title below
+    // TODO: (2.1): pass your titleString.c_str() as the window title below
     // instead of the placeholder "Assignment 1" literal.
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Assignment 1", nullptr, nullptr);
     if (!window) {
@@ -155,13 +151,13 @@ int main() {
         return -1;
     }
 
-    // TODO (2.3): compile + link your shaders here, once vertexShaderSource
+    // TODO: (2.3): compile + link your shaders here, once vertexShaderSource
     // and fragmentShaderSource exist above.
     // unsigned int shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
     glEnable(GL_DEPTH_TEST); // near surfaces should hide far ones -- you'll want this once you have a 3D cube
 
-    // TODO (2.2): build your cube's vertex/index data and upload it to the
+    // TODO: (2.2): build your cube's vertex/index data and upload it to the
     // GPU here (glGenVertexArrays / glGenBuffers / glBindBuffer /
     // glBufferData / glVertexAttribPointer / glEnableVertexAttribArray),
     // once you've declared the arrays and layout above. This happens once,
@@ -169,7 +165,7 @@ int main() {
 
     // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
     while (!glfwWindowShouldClose(window)) {
-        // TODO: poll any continuously-held keys here, if you're using that
+        // TODO:: poll any continuously-held keys here, if you're using that
         // input style for anything (see the demo's processInput() for the
         // pattern, and its INPUT HANDLING comment block for when polling is
         // the right tool vs. when the key_callback below is).
@@ -177,7 +173,7 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // TODO (2.3/2.5/2.6/2.7): use your shader program, compute and
+        // TODO: (2.3/2.5/2.6/2.7): use your shader program, compute and
         // upload this frame's transform/color/light uniforms, bind your
         // cube's VAO, and issue the draw call. This is the part of the demo's
         // render loop that was specific to drawing letters -- yours will be
@@ -189,7 +185,7 @@ int main() {
     }
 
     // ---- Cleanup ---------------------------------------------------------
-    // TODO: delete whatever VAOs/VBOs/EBOs and shader program you created
+    // TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created
     // above, the same way the Assignment 0 demo cleans up its letter
     // buffers and shader program before glfwTerminate().
     glfwTerminate();
@@ -207,7 +203,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     (void)scancode;
     (void)mods;
 
-    // TODO (2.4): handle ESC to close the window (see the Assignment 1
+    // TODO: (2.4): handle ESC to close the window (see the Assignment 1
     // Instructions example), and add whatever other keys Sections 2.5
     // (color) and 2.6 (light position) and 2.7 (rotation) need. Remember:
     // action == GLFW_PRESS means "just went down this frame" -- check that
