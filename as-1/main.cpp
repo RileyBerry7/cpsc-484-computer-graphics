@@ -8,6 +8,8 @@
 #include <fstream>         // std::ifstream -- used by isRunningUnderWSL() below
 #include <iostream>        // std::cerr / std::cout for error and debug messages
 #include <string>          // std::string -- used by isRunningUnderWSL() below, and by the titleString you'll add next
+#include <memory>          // std::unique_ptr -- used by the Mesh class
+#include <vector>          // std::vector -- used by the Mesh class
 
 #include<glm/glm.hpp>		       // Linear algebra library
 #include<glm/gtc/matrix_transform.hpp> //
@@ -50,19 +52,15 @@ glm::vec3 arrowKeyInput(GLFWwindow* window) {
     glm::vec3 direction(0.0f);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)  {
-	std::cout << "User pressed Up Arrow\n";
 	direction.x -= 1.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  {
-	std::cout << "User pressed Down Arrow\n";
 	direction.x += 1.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  {
-	std::cout << "User pressed Left Arrow\n";
 	direction.y -= 1.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)  {
-	std::cout << "User pressed Right Arrow\n";
 	direction.y += 1.0f;
     }
     // Prevent diagonal input from being faster 
@@ -83,90 +81,65 @@ glm::vec3 cycleColor(float t) {
 }
 //----------------------------------------------------------------------------------------------
 
-
-// GLOBALS
-glm::vec3 colorInput(1.0f, 1.0f, 1.0f); // start as white
-float t = 0.0f;
-bool smoothColorCycle = false;
-glm::vec3 lightPos(-4.0f, 10.0f, 4.0f);
-
 //TODO: (2.1) declare your own window-title string here. See Assignment 1
-// Instructions, Section 2.1. Something like:
-//     std::string titleString = "Fall 2026 - Assignment 1 - <Your Full Name>";
-std::string titleString  = "Fall 2022 - Assignment 1 - Riley Berry";
+std::string titleString  = "Fall 2026 - Assignment 1 - Riley Berry";
 
 // -----------------------------------------------------------------------------
 // FUNCTION PROTOTYPES
-// C++ requires a function to be declared before it's used. main() (further
-// down) calls these, so they're declared here and defined later in the file.
 // -----------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height); // called by GLFW whenever the window is resized
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods); // called by GLFW on every key press/release/repeat
 unsigned int compileShader(unsigned int type, const char* source);         // compiles one GLSL shader, returns its OpenGL ID
 unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc); // compiles + links both shaders into one usable program
 
-// Screen dimensions -- passed to glfwCreateWindow() below. Feel free to
-// change these, but keep them as named constants rather than magic numbers
-// scattered through the file.
 const unsigned int SCR_WIDTH = 800;  // window width in pixels
 const unsigned int SCR_HEIGHT = 600; // window height in pixels
 
 // TODO:: (2.3): declare your vertex shader and fragment shader source here, as
-// C++ raw string literals (see the Assignment 0 demo for the R"GLSL(...)GLSL"
-// pattern and why it's safer than a plain R"(...)"). At minimum your vertex
-// shader needs:
-//   - a position input attribute and a normal input attribute
-//   - a "transform" uniform (mat4) to place/rotate the mesh
-// and your fragment shader needs:
-//   - a "color" uniform (vec3) for the current cube color
-//   - some simple ambient + diffuse shading using the light's position/
-//     direction, so the cube's faces are visibly shaded differently rather
-//     than being flat silhouettes (see the demo's fragment shader for one
-//     way to do this -- yours doesn't have to match it exactly).
-//
-// const char* vertexShaderSource = R"GLSL(...)GLSL";
-// const char* fragmentShaderSource = R"GLSL(...)GLSL";
-
-
-
+// I abstracted my shader source code into separate files.
+// Please reference /default.vert and /default.frag.
 
 // TODO: (2.2): declare whatever state your mesh needs. At minimum you'll want
 // somewhere to put your vertex data (positions + normals) and your index
 // data once you've decided on a layout -- see Section 2.2 for the required
 // float vertices[] / unsigned int indices[] shape. You'll also need VAO/VBO/
 // EBO ids once you get to uploading that data to the GPU.
+class Mesh {
+public:
+ 
+    std::vector<float>        vertices;
+    std::vector<unsigned int> indices;
+
+    std::unique_ptr<VAO>      vao;
+    std::unique_ptr<VBO>      vbo;
+    std::unique_ptr<EBO>      ebo;
+};
 
 
-// TODO: (2.4/2.5/2.6): declare whatever state your input handling needs to
-// read and modify -- e.g. the cube's current color, a list of colors to
-// cycle through, the light's position, and the mesh's current rotation
-// angles. Nothing here is pre-named for you; pick names that make sense to
-// you, since you're the one who has to keep using them.
+// TODO: (2.4/2.5/2.6): declare whatever state your input handling needs.
+
+auto colorInput       = glm::vec3(1.0f, 1.0f, 1.0f);   // Starting cube color
+float t		      = 0.0f;			       // Parameter for cycleColor function
+bool smoothColorCycle = false;			       // Toggle smooth color cycle
+auto lightPos         = glm::vec3(-8.0f, 15.0f, 8.0f); // Starting light position
+auto bgColor	      = glm::vec4(0.1f, 0.1f, 0.2f, 1.0f);// Starting background color
 
 // -----------------------------------------------------------------------------
 // PLATFORM DETECTION (Linux/WSL only -- a no-op on Windows/macOS)
 // -----------------------------------------------------------------------------
-// Carried over from the Assignment 0 demo unchanged: under WSLg, GLFW's
-// default Wayland backend has a known window-resize bug, so on WSL
-// specifically we ask GLFW to use X11 instead. See the demo's own comments
-// (right above its isRunningUnderWSL()) for the full explanation -- there's
-// nothing assignment-specific to change here.
 bool isRunningUnderWSL() {
     if (std::getenv("WSL_DISTRO_NAME") != nullptr) return true;
     if (std::getenv("WSL_INTEROP") != nullptr) return true;
 
     std::ifstream versionFile("/proc/version");
     if (versionFile) {
-        std::string contents((std::istreambuf_iterator<char>(versionFile)),
-                              std::istreambuf_iterator<char>());
-        for (char& c : contents) {
+        std::string contents((std::istreambuf_iterator<char>(versionFile)), std::istreambuf_iterator<char>());
+        for (char& c : contents) 
             c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-        }
         if (contents.find("microsoft") != std::string::npos) return true;
     }
     return false;
 }
-
 //===================================================================================================================
 
 int main() {
@@ -200,11 +173,11 @@ int main() {
     }
     glfwMakeContextCurrent(window);
 
-    // Register our callbacks. GLFW calls these automatically -- we never call them ourselves.
+    // Register our callbacks: GLFW calls these automatically
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
 
-    // ---- Step 2: load OpenGL function pointers via GLAD ----------------
+    // Step 2: Load OpenGL functions with GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return -1;
@@ -213,16 +186,11 @@ int main() {
     // TODO: (2.3): compile + link your shaders here.
     Shader shaderProgram("default.vert", "default.frag");
 
-    glEnable(GL_DEPTH_TEST); // near surfaces should hide far ones -- you'll want this once you have a 3D cube
+    glEnable(GL_DEPTH_TEST); // Enable depth testing
 
-    // TODO: (2.2): build your cube's vertex/index data and upload it to the
-    // GPU here (glGenVertexArrays / glGenBuffers / glBindBuffer /
-    // glBufferData / glVertexAttribPointer / glEnableVertexAttribArray),
-    // once you've declared the arrays and layout above. This happens once,
-    // before the render loop -- not every frame.
-
-    // Vertices coordinates (COORDINATES / COLORS / TexCoord / NORMALS)
+    // TODO: (2.2): build your cube's vertex/incex data and upload it to the GPU.
     GLfloat vertices[] = {
+
     // POSITION            / COLOR             / TEXCOORD  / NORMALS
     // Front Face (Z = 1.0f)
     -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f,  1.0f,
@@ -291,8 +259,8 @@ GLuint indices[] = {
     float currentTime	= glfwGetTime();    // Time of current frame
     float prevTime	= currentTime;	    // Time of previous frame
     float deltaTime	= 0.0f;		    // Time since last frame
-    float rotationSpeed = 45.0f;	    // Degrees per second
-    float movementSpeed = 5.0f;		    // Model units per second
+    float rotationSpeed = 65.0f;	    // Degrees per second
+    float movementSpeed = 10.0f;		    // Model units per second
     auto  rotationAxis  = glm::vec3(0.0f, 0.0f, 0.0f); // 3D axis of rotation (normalized)
     auto  lightMovement = glm::vec3(0.0f, 0.0f, 0.0f); // 3D vector of movement (normalized)
 
@@ -308,9 +276,10 @@ GLuint indices[] = {
     view  = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
     proj  = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
     lightModel = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+    model = glm::rotate(model, glm::radians(30.0f), glm::vec3(1.0f, -1.0f, 0.0f));
 
-    
     //===================================================================================================
+    //
     // 6. Render Loop
     // --------------------------------------------------------------------------------------------------
     while (!glfwWindowShouldClose(window)) {
@@ -332,10 +301,10 @@ GLuint indices[] = {
 	    t += 0.01;
 	    colorInput = cycleColor(t);
 	}
-
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
+        glClearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a); // Set the clear color
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	  // Clear the screen
+	//
         // TODO: (2.3/2.5/2.6/2.7): use your shader program, compute and
         // upload this frame's transform/color/light uniforms, bind your
         // cube's VAO, and issue the draw call. This is the part of the demo's
@@ -357,81 +326,80 @@ GLuint indices[] = {
 	int projLoc = glGetUniformLocation(shaderProgram.ID, "proj");
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
-	// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
-	glUniform1f(uniID, 0.5f);
-
+	// Set Uniform: colorInput
 	int colorInputLoc = glGetUniformLocation(shaderProgram.ID, "colorInput");
 	glUniform3f(colorInputLoc, colorInput.r, colorInput.g, colorInput.b);
-
+	
+	// Set Uniform: lightPos
 	int lightPosLoc = glGetUniformLocation(shaderProgram.ID, "lightPos");
 	glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 
+	// Set Uniform: isEmissive
 	int isEmissiveLoc = glGetUniformLocation(shaderProgram.ID, "isEmissive");
 	glUniform1i(isEmissiveLoc, false);
 
-	// Bind the VAO so OpenGL knows to use it
-	VAO1.Bind();
-
-	// Draw primitives, number of indices, datatype of indices, index of indices
+	VAO1.Bind(); // Bind the VAO
 	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
 
-	
+	// Draw call for light	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::translate(lightModel, lightPos)));
 	glUniform3f(colorInputLoc, 1.0f, 1.0f, 1.0f);
 	glUniform1i(isEmissiveLoc, true);
 	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+    
+        glfwSwapBuffers(window); // Swap front and back buffers
+        glfwPollEvents();        // Poll for and process events
     }
 
-    // ---- Cleanup --------------------------------------------------------------------------
-    // TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created.
-	VAO1.Delete();
-	VBO1.Delete();
-	EBO1.Delete();
-	shaderProgram.Delete();
+    //-----------------------------------------------------------------------------------------
+    // CLEANUP --  TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created.
+    VAO1.Delete();
+    VBO1.Delete();
+    EBO1.Delete();
+    shaderProgram.Delete();
     glfwTerminate();
 
     //-----------------------------------------------------------------------------------------
     return 0;
 }
 
-// Called every time the window is resized.
+//-----------------------------------------------------------------------------------------
+// WINDOW RESIZE CALLBACK
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     (void)window;
     glViewport(0, 0, width, height);
 }
 
-// Called by GLFW whenever a key is pressed, released, or repeated.
+//-----------------------------------------------------------------------------------------
+// KEY CALLBACK
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     (void)scancode;
     (void)mods;
 
-    // TODO: (2.4): handle ESC to close the window (see the Assignment 1
-    // Instructions example), and add whatever other keys Sections 2.5
-    // (color) and 2.6 (light position) and 2.7 (rotation) need. Remember:
-    // action == GLFW_PRESS means "just went down this frame" -- check that
-    // (or don't, depending on whether you want one-shot or repeat-while-
-    // held behavior) the same way the Assignment 0 demo's key_callback does.
+    // TODO:  (2.6): handle I/K/J/L/U/O to move the light
+    // TODO:  (2.7): handle Up/Down/Left/Right to rotate the cube
     
      if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-        // 2.4: ESC closes the window
+	
+	// TODO:  (2.4): handle ESC to close the window
         if (key == GLFW_KEY_ESCAPE) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
 
-        // 2.5: Color
+	// TODO:  (2.5): handle C to cycle color
         if (key == GLFW_KEY_C) {
             // Cycle color
             colorInput = cycleColor(t++);
         }
+
+        // TODO: (Extra Credit): handle V to toggle smooth color cycle
         if (key == GLFW_KEY_V) {
             // Cycle color
             smoothColorCycle = !smoothColorCycle;
         }
     }
 }
+//-----------------------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // SHADER COMPILE HELPERS
