@@ -16,7 +16,7 @@
 #include "shader.h"
 #include "gl_objects.h"
 
-glm::vec3 processInput (GLFWwindow* window) {
+glm::vec3 arrowKeyInput(GLFWwindow* window) {
     glm::vec3 direction(0.0f);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)  {
@@ -41,6 +41,20 @@ glm::vec3 processInput (GLFWwindow* window) {
     return direction;
 }
 
+glm::vec3 cycleColor(float t) {
+    const float pi = 3.14159265f;
+    return glm::vec3(
+        0.5f + 0.5f * sin(t),
+        0.5f + 0.5f * sin(t + 2.0f * pi / 3.0f),
+        0.5f + 0.5f * sin(t + 4.0f * pi / 3.0f)
+    );
+}
+
+
+// GLOBALS
+glm::vec3 colorInput(1.0f, 1.0f, 1.0f); // start as white
+float t = 0.0f;
+bool smoothColorCycle = false;
 
 //TODO: (2.1) declare your own window-title string here. See Assignment 1
 // Instructions, Section 2.1. Something like:
@@ -274,7 +288,7 @@ GLuint indices[] = {
     // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
     while (!glfwWindowShouldClose(window)) {
         // TODO:: poll any continuously-held keys here, if you're using that
-        // input style for anything (see the demo's processInput() for the
+        // input style for anything (see the demo's arrowKeyInput() for the
         // pattern, and its INPUT HANDLING comment block for when polling is
         // the right tool vs. when the key_callback below is).
     
@@ -284,8 +298,13 @@ GLuint indices[] = {
 	deltaTime   = currentTime - prevTime;
 	prevTime    = currentTime;
 
-	direction = processInput(window);
+	direction = arrowKeyInput(window);
 	float angle = rotationSpeed * glm::length(direction) * deltaTime;
+
+	if (smoothColorCycle) {
+	    t += 0.01;
+	    colorInput = cycleColor(t);
+	}
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -313,8 +332,11 @@ GLuint indices[] = {
 
 	// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
 	glUniform1f(uniID, 0.5f);
-	// Binds texture so that is appears in rendering
-	//brickTex.Bind();
+
+
+	int colorInputLoc = glGetUniformLocation(shaderProgram.ID, "colorInput");
+	glUniform3f(colorInputLoc, colorInput.r, colorInput.g, colorInput.b);
+
 	// Bind the VAO so OpenGL knows to use it
 	VAO1.Bind();
 
@@ -333,7 +355,6 @@ GLuint indices[] = {
 	VAO1.Delete();
 	VBO1.Delete();
 	EBO1.Delete();
-	//brickTex.Delete();
 	shaderProgram.Delete();
 
     glfwTerminate();
@@ -357,6 +378,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // action == GLFW_PRESS means "just went down this frame" -- check that
     // (or don't, depending on whether you want one-shot or repeat-while-
     // held behavior) the same way the Assignment 0 demo's key_callback does.
+    
+     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        // 2.4: ESC closes the window
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        }
+
+        // 2.5: Color
+        if (key == GLFW_KEY_C) {
+            // Cycle color
+            colorInput = cycleColor(t++);
+        }
+        if (key == GLFW_KEY_V) {
+            // Cycle color
+            smoothColorCycle = !smoothColorCycle;
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
