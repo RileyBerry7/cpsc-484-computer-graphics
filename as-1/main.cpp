@@ -1,31 +1,6 @@
 // =============================================================================
 // CPSC 484 - Assignment 1 - OpenGL Mesh Viewer (STARTER)
 // =============================================================================
-// This file is NOT a fill-in-the-blanks starter. It gives you the parts that
-// are the same in literally every OpenGL program -- opening a window and
-// getting a context (Step 1), loading OpenGL's function pointers (Step 2),
-// and the compile/link utility functions for turning GLSL text into a usable
-// shader program -- because none of that is specific to THIS assignment, and
-// you already built it once, understanding every line, in the Assignment 0
-// demo (cpsc484_a1_demo_letterviewer.cpp / its line-by-line commented
-// twin). Re-typing it here wouldn't teach you anything new.
-//
-// Everything below a "// TODO: (2.x)" comment is yours to write from scratch.
-// There are no predefined variables named cubeColor or lightPos waiting for
-// you to fill in a value -- you decide what state your program needs and how
-// to store it, the same way you'll have to on every assignment after this
-// one. The section numbers in the TODO:s match the Assignment 1 Instructions
-// document; that's where the actual requirements and grading weights live.
-// This file only tells you WHERE things go, not WHAT to write.
-//
-// Before you write a single line here, make sure you can explain -- to
-// yourself, out loud -- every piece of the Assignment 0 demo: why GLFW hints
-// have to be set before glfwCreateWindow(), what a VAO records versus what a
-// VBO holds, why glVertexAttribPointer's stride/offset have to match your
-// vertex layout exactly, and why compileShader() checks GL_COMPILE_STATUS.
-// If any of those feel shaky, that demo (not this file) is where to go back
-// to. This assignment assumes you already own that material.
-// =============================================================================
 
 #include "glad.h"          // OpenGL function loader -- must be included before glfw3.h
 #include <GLFW/glfw3.h>    // window/context creation, input, timing
@@ -40,6 +15,26 @@
 
 #include "shader.h"
 #include "gl_objects.h"
+
+glm::vec3 processInput (GLFWwindow* window) {
+    glm::vec3 direction(0.0f, 0.0f, 0.0f);
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)  {
+	std::cout << "User pressed Up Arrow\n";
+	direction.x = 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  {
+	std::cout << "User pressed Down Arrow\n";
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  {
+	std::cout << "User pressed Left Arrow\n";
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)  {
+	std::cout << "User pressed Right Arrow\n";
+    }
+    return direction;
+}
+
 
 //TODO: (2.1) declare your own window-title string here. See Assignment 1
 // Instructions, Section 2.1. Something like:
@@ -255,6 +250,7 @@ GLuint indices[] = {
     // Variables that help the rotation of the pyramid
     float rotation = 0.0f;
     double prevTime = glfwGetTime();
+    glm::vec3 direction(0.0f, 0.0f, 0.0f);
 
     // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
     while (!glfwWindowShouldClose(window)) {
@@ -262,6 +258,8 @@ GLuint indices[] = {
         // input style for anything (see the demo's processInput() for the
         // pattern, and its INPUT HANDLING comment block for when polling is
         // the right tool vs. when the key_callback below is).
+	
+	direction = processInput(window);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -275,44 +273,44 @@ GLuint indices[] = {
 		
        shaderProgram.Activate();
 
-// Simple timer
-		double crntTime = glfwGetTime();
-		if (crntTime - prevTime >= 1 / 60)
-		{
-			rotation += 0.5f;
-			prevTime = crntTime;
-		}
+	// Simple timer
+	double crntTime = glfwGetTime();
+	if (crntTime - prevTime >= 1 / 60)
+	{
+		rotation += 0.5f;
+		prevTime = crntTime;
+	}
 
-		// Initializes matrices so they are not the null matrix
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 proj = glm::mat4(1.0f);
+	// Initializes matrices so they are not the null matrix
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 proj = glm::mat4(1.0f);
 
-		// Assigns different transformations to each matrix
-		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
-		proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+	// Assigns different transformations to each matrix
+	model = glm::rotate(model, glm::radians(rotation), direction);
+	view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
+	proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
-		// Outputs the matrices into the Vertex Shader
-		model *= glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
-		model *= glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+	// Outputs the matrices into the Vertex Shader
+	model *= glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
+	model *= glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
 
-		int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		int projLoc = glGetUniformLocation(shaderProgram.ID, "proj");
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+	int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	int projLoc = glGetUniformLocation(shaderProgram.ID, "proj");
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
-		// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
-		glUniform1f(uniID, 0.5f);
-		// Binds texture so that is appears in rendering
-		//brickTex.Bind();
-		// Bind the VAO so OpenGL knows to use it
-		VAO1.Bind();
+	// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
+	glUniform1f(uniID, 0.5f);
+	// Binds texture so that is appears in rendering
+	//brickTex.Bind();
+	// Bind the VAO so OpenGL knows to use it
+	VAO1.Bind();
 
-		// Draw primitives, number of indices, datatype of indices, index of indices
-		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
+	// Draw primitives, number of indices, datatype of indices, index of indices
+	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
