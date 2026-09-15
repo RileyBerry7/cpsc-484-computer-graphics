@@ -87,23 +87,26 @@ std::string titleString  = "Fall 2026 - Assignment 1 - Riley Berry";
 // -----------------------------------------------------------------------------
 // FUNCTION PROTOTYPES
 // -----------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height); // called by GLFW whenever the window is resized
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods); // called by GLFW on every key press/release/repeat
-unsigned int compileShader(unsigned int type, const char* source);         // compiles one GLSL shader, returns its OpenGL ID
-unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc); // compiles + links both shaders into one usable program
 
-const unsigned int SCR_WIDTH = 800;  // window width in pixels
-const unsigned int SCR_HEIGHT = 600; // window height in pixels
+glm::vec3 lightPosInput(GLFWwindow* window); // Handles I/K/J/L/U/O
+glm::vec3 arrowKeyInput(GLFWwindow* window); // Handles Up/Down/Left/Right
+glm::vec3 cycleColor(float t);               // Calculates color given t
 
-// TODO:: (2.3): declare your vertex shader and fragment shader source here, as
-// I abstracted my shader source code into separate files.
-// Please reference /default.vert and /default.frag.
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);	    // Called on window resize
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods); // Called on key press
+unsigned int compileShader(unsigned int type, const char* source);		    // Compiles shader program
+unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc);   // Compiles/links shader program
 
-// TODO: (2.2): declare whatever state your mesh needs. At minimum you'll want
-// somewhere to put your vertex data (positions + normals) and your index
-// data once you've decided on a layout -- see Section 2.2 for the required
-// float vertices[] / unsigned int indices[] shape. You'll also need VAO/VBO/
-// EBO ids once you get to uploading that data to the GPU.
+
+// TODO:: (2.3): declare your vertex shader and fragment shader source here.
+//
+// NOTE: I abstracted my shader source code into separate files.
+//       Please reference /default.vert and /default.frag.
+
+// TODO: (2.2): declare whatever state your mesh needs.
+//
+// NOTE: I abstraced VAO, VBO, and EBO into their own classes.
+//       Please reference /gl_objects.h.
 class Mesh {
 public:
  
@@ -117,6 +120,9 @@ public:
 
 
 // TODO: (2.4/2.5/2.6): declare whatever state your input handling needs.
+// GLOBALS 
+const unsigned int SCR_WIDTH = 800;  // window width in pixels
+const unsigned int SCR_HEIGHT = 600; // window height in pixels
 
 auto colorInput       = glm::vec3(1.0f, 1.0f, 1.0f);   // Starting cube color
 float t		      = 0.0f;			       // Parameter for cycleColor function
