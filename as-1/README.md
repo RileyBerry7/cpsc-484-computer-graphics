@@ -1,6 +1,7 @@
 ## Assignment 1
 ---
-| :--- | :--- |
+| **Field**                             | **Value**                    |
+| :---                                  | :---                         |
 | **Student Name**                      | Riley Berry                  |
 | **OS**                                | Linux (Windows 11 - WSL)     |
 | **Collaborators**                     | None                         |
