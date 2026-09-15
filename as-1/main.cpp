@@ -318,13 +318,14 @@ int main() {
 	int isEmissiveLoc = glGetUniformLocation(shaderProgram.ID, "isEmissive");
 	glUniform1i(isEmissiveLoc, false);
 
-	cube.Draw();
+	cube.Draw(); // Model cube draw call
 
-	// Draw call for light	
+	// Set light cube uniforms	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::translate(lightModel, lightPos)));
 	glUniform3f(colorInputLoc, 1.0f, 1.0f, 1.0f);
 	glUniform1i(isEmissiveLoc, true);
-	cube.Draw();
+
+	cube.Draw(); // Light cube draw call
     
         glfwSwapBuffers(window); // Swap front and back buffers
         glfwPollEvents();        // Poll for and process events
