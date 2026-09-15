@@ -8,10 +8,16 @@ out vec4 FragColor;
 
 uniform vec3 colorInput;
 uniform vec3 lightPos;
+uniform bool isEmissive;
 
 
 void main()
 {
+	if (isEmissive) {
+		FragColor = vec4(colorInput, 1.0);
+		return;
+	}
+
 	vec3 lightDir    = normalize(lightPos - fragPos);
 	float lambert    = dot(normal, lightDir);
 	vec3 lightEnergy = vec3(clamp(lambert, 0.0, 1.0));

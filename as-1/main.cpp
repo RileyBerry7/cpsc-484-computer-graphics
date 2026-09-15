@@ -16,6 +16,33 @@
 #include "shader.h"
 #include "gl_objects.h"
 
+glm::vec3 lightPosInput(GLFWwindow* window) {
+    glm::vec3 direction(0.0f);
+
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)  {
+	direction.z -= 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)  {
+	direction.z += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)  {
+	direction.x -= 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)  {
+	direction.x += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)  {
+	direction.y += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)  {
+	direction.y -= 1.0f;
+    }
+    // Prevent diagonal input from being faster 
+    if (glm::length(direction) > 1.0f) 
+	direction = glm::normalize(direction);
+    return direction;
+}
+
 glm::vec3 arrowKeyInput(GLFWwindow* window) {
     glm::vec3 direction(0.0f);
 
@@ -269,22 +296,27 @@ GLuint indices[] = {
     GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
     // Variables that help the rotation of the pyramid
-    double currentTime = glfwGetTime();
-    double prevTime = currentTime;
-    double deltaTime = 0.0f;
+    float currentTime = glfwGetTime();
+    float prevTime = currentTime;
+    float deltaTime = 0.0f;
     glm::vec3 direction(0.0f, 0.0f, 0.0f);
     float rotationSpeed = 45.0f; // Degrees per second
+    glm:: vec lightMovement = glm::vec3(0.0f, 0.0f, 0.0f);
+    float movementSpeed = 5.0f;
 
     // Initializes matrices so they are not the null matrix
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 proj = glm::mat4(1.0f);
+    glm::mat4 lightModel = model;
 
+    model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
+    model = glm::translate(model, glm::vec3(0.0f, 0.75f, 0.0f));
+    view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
+    proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+    lightModel = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
-	model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
-	model = glm::translate(model, glm::vec3(0.0f, 0.6f, 0.0f));
-	view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
-	proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+    
 
     // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
     while (!glfwWindowShouldClose(window)) {
@@ -301,6 +333,9 @@ GLuint indices[] = {
 
 	direction = arrowKeyInput(window);
 	float angle = rotationSpeed * glm::length(direction) * deltaTime;
+
+	lightMovement = lightPosInput(window);
+	lightPos = lightPos + (lightMovement * movementSpeed * deltaTime);
 
 	if (smoothColorCycle) {
 	    t += 0.01;
@@ -334,17 +369,25 @@ GLuint indices[] = {
 	// Assigns a value to the uniform; NOTE: Must always be done after activating the Shader Program
 	glUniform1f(uniID, 0.5f);
 
-
 	int colorInputLoc = glGetUniformLocation(shaderProgram.ID, "colorInput");
 	glUniform3f(colorInputLoc, colorInput.r, colorInput.g, colorInput.b);
 
 	int lightPosLoc = glGetUniformLocation(shaderProgram.ID, "lightPos");
 	glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 
+	int isEmissiveLoc = glGetUniformLocation(shaderProgram.ID, "isEmissive");
+	glUniform1i(isEmissiveLoc, false);
+
 	// Bind the VAO so OpenGL knows to use it
 	VAO1.Bind();
 
 	// Draw primitives, number of indices, datatype of indices, index of indices
+	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
+
+	
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::translate(lightModel, lightPos)));
+	glUniform3f(colorInputLoc, 1.0f, 1.0f, 1.0f);
+	glUniform1i(isEmissiveLoc, true);
 	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
