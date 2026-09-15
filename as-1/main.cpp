@@ -17,21 +17,27 @@
 #include "gl_objects.h"
 
 glm::vec3 processInput (GLFWwindow* window) {
-    glm::vec3 direction(0.0f, 0.0f, 0.0f);
+    glm::vec3 direction(0.0f);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)  {
 	std::cout << "User pressed Up Arrow\n";
-	direction.x = 1.0f;
+	direction.x -= 1.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  {
 	std::cout << "User pressed Down Arrow\n";
+	direction.x += 1.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  {
 	std::cout << "User pressed Left Arrow\n";
+	direction.y -= 1.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)  {
 	std::cout << "User pressed Right Arrow\n";
+	direction.y += 1.0f;
     }
+    // Prevent diagonal input from being faster 
+    if (glm::length(direction) > 1.0f) 
+	direction = glm::normalize(direction);
     return direction;
 }
 
@@ -248,9 +254,22 @@ GLuint indices[] = {
     GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
     // Variables that help the rotation of the pyramid
-    float rotation = 0.0f;
-    double prevTime = glfwGetTime();
+    double currentTime = glfwGetTime();
+    double prevTime = currentTime;
+    double deltaTime = 0.0f;
     glm::vec3 direction(0.0f, 0.0f, 0.0f);
+    float rotationSpeed = 45.0f; // Degrees per second
+
+    // Initializes matrices so they are not the null matrix
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 proj = glm::mat4(1.0f);
+
+
+	model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+	model = glm::translate(model, glm::vec3(0.0f, 0.6f, 0.0f));
+	view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
+	proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
     // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
     while (!glfwWindowShouldClose(window)) {
@@ -258,8 +277,15 @@ GLuint indices[] = {
         // input style for anything (see the demo's processInput() for the
         // pattern, and its INPUT HANDLING comment block for when polling is
         // the right tool vs. when the key_callback below is).
-	
+    
+
+	// Tick the clock
+	currentTime = glfwGetTime();
+	deltaTime   = currentTime - prevTime;
+	prevTime    = currentTime;
+
 	direction = processInput(window);
+	float angle = rotationSpeed * glm::length(direction) * deltaTime;
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -273,28 +299,11 @@ GLuint indices[] = {
 		
        shaderProgram.Activate();
 
-	// Simple timer
-	double crntTime = glfwGetTime();
-	if (crntTime - prevTime >= 1 / 60)
-	{
-		rotation += 0.5f;
-		prevTime = crntTime;
-	}
-
-	// Initializes matrices so they are not the null matrix
-	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 proj = glm::mat4(1.0f);
-
 	// Assigns different transformations to each matrix
-	model = glm::rotate(model, glm::radians(rotation), direction);
-	view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
-	proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+	if (glm::length(direction) > 0.0f)
+	    model = glm::rotate(model, glm::radians(angle), glm::normalize(direction));
 
 	// Outputs the matrices into the Vertex Shader
-	model *= glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
-	model *= glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
-
 	int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
