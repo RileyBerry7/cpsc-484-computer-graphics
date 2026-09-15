@@ -17,91 +17,31 @@
 
 #include "shader.h"	// Shader class
 #include "gl_objects.h" // VAO, VBO, EBO
-
-//----------------------------------------------------------------------------------------------
-glm::vec3 lightPosInput(GLFWwindow* window) {
-    glm::vec3 direction(0.0f);
-
-    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)  {
-	direction.z -= 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)  {
-	direction.z += 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)  {
-	direction.x -= 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)  {
-	direction.x += 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)  {
-	direction.y += 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)  {
-	direction.y -= 1.0f;
-    }
-    // Prevent diagonal input from being faster 
-    if (glm::length(direction) > 1.0f) 
-	direction = glm::normalize(direction);
-    return direction;
-}
-//----------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------------
-glm::vec3 arrowKeyInput(GLFWwindow* window) {
-    glm::vec3 direction(0.0f);
-
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)  {
-	direction.x -= 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  {
-	direction.x += 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  {
-	direction.y -= 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)  {
-	direction.y += 1.0f;
-    }
-    // Prevent diagonal input from being faster 
-    if (glm::length(direction) > 1.0f) 
-	direction = glm::normalize(direction);
-    return direction;
-}
-//----------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------------
-glm::vec3 cycleColor(float t) {
-    const float pi = 3.14159265f;
-    return glm::vec3(
-        0.5f + 0.5f * sin(t),
-        0.5f + 0.5f * sin(t + 2.0f * pi / 3.0f),
-        0.5f + 0.5f * sin(t + 4.0f * pi / 3.0f)
-    );
-}
-//----------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
 //TODO: (2.1) declare your own window-title string here. See Assignment 1
 std::string titleString  = "Fall 2026 - Assignment 1 - Riley Berry";
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // FUNCTION PROTOTYPES
-// -----------------------------------------------------------------------------
-
+// --------------------------------------------------------------------------------------------------
 glm::vec3 lightPosInput(GLFWwindow* window); // Handles I/K/J/L/U/O
 glm::vec3 arrowKeyInput(GLFWwindow* window); // Handles Up/Down/Left/Right
 glm::vec3 cycleColor(float t);               // Calculates color given t
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);	    // Called on window resize
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods); // Called on key press
-unsigned int compileShader(unsigned int type, const char* source);		    // Compiles shader program
-unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc);   // Compiles/links shader program
+
+// NOTE: All my shader code is abstracted into its own file.
+//unsigned int compileShader(unsigned int type, const char* source);		    // Compiles shader program
+//unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc); // Compiles/links shader program
 
 
 // TODO:: (2.3): declare your vertex shader and fragment shader source here.
 //
 // NOTE: I abstracted my shader source code into separate files.
 //       Please reference /default.vert and /default.frag.
+
 
 // TODO: (2.2): declare whatever state your mesh needs.
 //
@@ -130,9 +70,9 @@ bool smoothColorCycle = false;			       // Toggle smooth color cycle
 auto lightPos         = glm::vec3(-8.0f, 15.0f, 8.0f); // Starting light position
 auto bgColor	      = glm::vec4(0.1f, 0.1f, 0.2f, 1.0f);// Starting background color
 
-// -----------------------------------------------------------------------------
-// PLATFORM DETECTION (Linux/WSL only -- a no-op on Windows/macOS)
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
+// PLATFORM DETECTION (Linux only)
+// --------------------------------------------------------------------------------------------------
 bool isRunningUnderWSL() {
     if (std::getenv("WSL_DISTRO_NAME") != nullptr) return true;
     if (std::getenv("WSL_INTEROP") != nullptr) return true;
@@ -368,23 +308,22 @@ GLuint indices[] = {
     //-----------------------------------------------------------------------------------------
     return 0;
 }
+//==============================================================================================
+
+
 
 //-----------------------------------------------------------------------------------------
-// WINDOW RESIZE CALLBACK
+// INPUT CALLBACKS
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     (void)window;
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, width, height); // Change viewport size
 }
 
-//-----------------------------------------------------------------------------------------
-// KEY CALLBACK
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     (void)scancode;
     (void)mods;
 
-    // TODO:  (2.6): handle I/K/J/L/U/O to move the light
-    // TODO:  (2.7): handle Up/Down/Left/Right to rotate the cube
-    
      if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 	
 	// TODO:  (2.4): handle ESC to close the window
@@ -405,54 +344,73 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         }
     }
 }
+//----------------------------------------------------------------------------------------------
+// HELPER: (Extra Credit): Smooth color cycle
+
+glm::vec3 cycleColor(float t) {
+    const float pi = 3.14159265f;
+    return glm::vec3(
+        0.5f + 0.5f * sin(t),
+        0.5f + 0.5f * sin(t + 2.0f * pi / 3.0f),
+        0.5f + 0.5f * sin(t + 4.0f * pi / 3.0f)
+    );
+}
+
 //-----------------------------------------------------------------------------------------
+// INPUT POLLING
+
+// TODO:  (2.6): handle I/K/J/L/U/O to move the light
+glm::vec3 lightPosInput(GLFWwindow* window) {
+    glm::vec3 direction(0.0f);
+
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)  {
+	direction.z -= 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)  {
+	direction.z += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)  {
+	direction.x -= 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)  {
+	direction.x += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)  {
+	direction.y += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)  {
+	direction.y -= 1.0f;
+    }
+    // Prevent diagonal input from being faster 
+    if (glm::length(direction) > 1.0f) 
+	direction = glm::normalize(direction);
+    return direction;
+}
+//----------------------------------------------------------------------------------------------
+
+// TODO:  (2.7): handle Up/Down/Left/Right to rotate the cube
+glm::vec3 arrowKeyInput(GLFWwindow* window) {
+    glm::vec3 direction(0.0f);
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)  {
+	direction.x -= 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  {
+	direction.x += 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  {
+	direction.y -= 1.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)  {
+	direction.y += 1.0f;
+    }
+    // Prevent diagonal input from being faster 
+    if (glm::length(direction) > 1.0f) 
+	direction = glm::normalize(direction);
+    return direction;
+}
 
 // -----------------------------------------------------------------------------
 // SHADER COMPILE HELPERS
 // -----------------------------------------------------------------------------
-// Carried over from the Assignment 0 demo, unchanged -- this is reusable
-// boilerplate, not something specific to this assignment's mesh. You WILL
-// need to call createShaderProgram() with your own shader source strings
-// (Section 2.3) -- that's the assignment-specific part.
-//
-// ALWAYS check compile/link status like this. When you get a blank screen
-// later, this is almost always where the answer is -- read the console
-// output before you touch anything else.
-
-unsigned int compileShader(unsigned int type, const char* source) {
-    unsigned int shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, nullptr);
-    glCompileShader(shader);
-
-    int success;
-    char infoLog[512];
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        std::cerr << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    return shader;
-}
-
-unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc) {
-    unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vertexSrc);
-    unsigned int fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentSrc);
-
-    unsigned int program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glLinkProgram(program);
-
-    int success;
-    char infoLog[512];
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(program, 512, nullptr, infoLog);
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-    
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return program;
-}
-//==========================================================================================
+//  NOTE: I did not use the provided template.
