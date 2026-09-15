@@ -1,5 +1,5 @@
 #include "shader.h"
-
+//--------------------------------------------------------------------------------------------
 // Reads a text file and outputs a string with everything in the text file
 std::string get_file_contents(const char* filename)
 {
@@ -17,6 +17,7 @@ std::string get_file_contents(const char* filename)
 	throw(errno);
 }
 
+//============================================================================================
 // Constructor that build the Shader Program from 2 different shaders
 Shader::Shader(const char* vertexFile, const char* fragmentFile)
 {
@@ -61,19 +62,21 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 	glDeleteShader(fragmentShader);
 
 }
-
+//--------------------------------------------------------------------------------------------
 // Activates the Shader Program
 void Shader::Activate()
 {
 	glUseProgram(ID);
 }
 
+//--------------------------------------------------------------------------------------------
 // Deletes the Shader Program
 void Shader::Delete()
 {
 	glDeleteProgram(ID);
 }
 
+//--------------------------------------------------------------------------------------------
 // Checks if the different Shaders have compiled properly
 void Shader::compileErrors(unsigned int shader, const char* type)
 {
@@ -100,3 +103,4 @@ void Shader::compileErrors(unsigned int shader, const char* type)
 		}
 	}
 }
+//============================================================================================
