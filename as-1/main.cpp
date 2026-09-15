@@ -47,6 +47,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 //
 // NOTE: I abstraced VAO, VBO, and EBO into their own classes.
 //       Please reference /gl_objects.h.
+//--------------------------------------------------------------------------------------------------
 class Mesh {
 public:
  
@@ -56,23 +57,57 @@ public:
     std::unique_ptr<VAO>      vao;
     std::unique_ptr<VBO>      vbo;
     std::unique_ptr<EBO>      ebo;
-};
 
+    Mesh(std::vector<float> vertices, std::vector<unsigned int> indices) : vertices(vertices), indices(indices) {
+
+        vao = std::make_unique<VAO>(); // Create VAO
+        vao->Bind();		       // Bind VAO
+
+	// Instanciate the VBO and EBO
+        vbo = std::make_unique<VBO>(this->vertices.data(), this->vertices.size() * sizeof(float));
+        ebo = std::make_unique<EBO>(this->indices.data(), this->indices.size() * sizeof(unsigned int));
+
+        GLsizei stride = 11 * sizeof(float); // Set stride: 11 floats per vertex
+        
+        // Link the VBO to the VAO
+        vao->LinkAttrib(*vbo, 0, 3, GL_FLOAT, stride, (void*)0);                   // 1. Position
+        vao->LinkAttrib(*vbo, 1, 3, GL_FLOAT, stride, (void*)(3 * sizeof(float))); // 2. Color
+        vao->LinkAttrib(*vbo, 2, 2, GL_FLOAT, stride, (void*)(6 * sizeof(float))); // 3. TexCoord
+        vao->LinkAttrib(*vbo, 3, 3, GL_FLOAT, stride, (void*)(8 * sizeof(float))); // 4. Normals
+
+        vao->Unbind(); // Unbind VAO
+        vbo->Unbind(); // Unbind VBO
+        ebo->Unbind(); // Unbind EBO
+    }
+
+    void Delete() {
+	vao->Delete();
+	vbo->Delete();
+	ebo->Delete();
+    }
+
+    void Draw() {
+	vao->Bind();
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+	vao->Unbind();
+    }
+};
+//--------------------------------------------------------------------------------------------------
 
 // TODO: (2.4/2.5/2.6): declare whatever state your input handling needs.
 // GLOBALS 
 const unsigned int SCR_WIDTH = 800;  // window width in pixels
 const unsigned int SCR_HEIGHT = 600; // window height in pixels
 
-auto colorInput       = glm::vec3(1.0f, 1.0f, 1.0f);   // Starting cube color
-float t		      = 0.0f;			       // Parameter for cycleColor function
-bool smoothColorCycle = false;			       // Toggle smooth color cycle
-auto lightPos         = glm::vec3(-8.0f, 15.0f, 8.0f); // Starting light position
+auto colorInput       = glm::vec3(1.0f, 1.0f, 1.0f);      // Starting cube color
+float t		      = 0.0f;			          // Parameter for cycleColor function
+bool smoothColorCycle = false;			          // Toggle smooth color cycle
+auto lightPos         = glm::vec3(-8.0f, 15.0f, 8.0f);    // Starting light position
 auto bgColor	      = glm::vec4(0.1f, 0.1f, 0.2f, 1.0f);// Starting background color
 
-// --------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // PLATFORM DETECTION (Linux only)
-// --------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 bool isRunningUnderWSL() {
     if (std::getenv("WSL_DISTRO_NAME") != nullptr) return true;
     if (std::getenv("WSL_INTEROP") != nullptr) return true;
@@ -111,13 +146,14 @@ int main() {
 
     // TODO: (2.1): pass your titleString.c_str() as the window title below.
     // Open GLFW window
+
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, titleString.c_str(), nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window); // Make the window's context current
 
     // Register our callbacks: GLFW calls these automatically
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -135,73 +171,61 @@ int main() {
     glEnable(GL_DEPTH_TEST); // Enable depth testing
 
     // TODO: (2.2): build your cube's vertex/incex data and upload it to the GPU.
-    GLfloat vertices[] = {
+    std::vector<float> vertices = {
 
-    // POSITION            / COLOR             / TEXCOORD  / NORMALS
-    // Front Face (Z = 1.0f)
-    -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f,  1.0f,
-     1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  0.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  0.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  0.0f,  1.0f,
+	// POSITION            / COLOR             / TEXCOORD  / NORMALS
+	// Front Face (Z = 1.0f)
+	-1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  0.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  0.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  0.0f,  1.0f,
 
-    // Back Face (Z = -1.0f)
-    -1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  0.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  0.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  0.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f, -1.0f,
+	// Back Face (Z = -1.0f)
+	-1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  0.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  0.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  0.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  0.0f, -1.0f,
 
-    // Left Face (X = -1.0f)
-    -1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,  -1.0f,  0.0f,  0.0f,
-    -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,  -1.0f,  0.0f,  0.0f,
-    -1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  -1.0f,  0.0f,  0.0f,
-    -1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,  -1.0f,  0.0f,  0.0f,
+	// Left Face (X = -1.0f)
+	-1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,  -1.0f,  0.0f,  0.0f,
+	-1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,  -1.0f,  0.0f,  0.0f,
+	-1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  -1.0f,  0.0f,  0.0f,
+	-1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,  -1.0f,  0.0f,  0.0f,
 
-    // Right Face (X = 1.0f)
-     1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   1.0f,  0.0f,  0.0f,
-     1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   1.0f,  0.0f,  0.0f,
-     1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   1.0f,  0.0f,  0.0f,
-     1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   1.0f,  0.0f,  0.0f,
+	// Right Face (X = 1.0f)
+	 1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   1.0f,  0.0f,  0.0f,
+	 1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   1.0f,  0.0f,  0.0f,
+	 1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   1.0f,  0.0f,  0.0f,
+	 1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   1.0f,  0.0f,  0.0f,
 
-    // Top Face (Y = 1.0f)
-    -1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  1.0f,  0.0f,
-     1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  1.0f,  0.0f,
-     1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  1.0f,  0.0f,
-    -1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  1.0f,  0.0f,
+	// Top Face (Y = 1.0f)
+	-1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f,  1.0f,  0.0f,
+	 1.0f,  1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f,  1.0f,  0.0f,
+	 1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f,  1.0f,  0.0f,
+	-1.0f,  1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f,  1.0f,  0.0f,
 
-    // Bottom Face (Y = -1.0f)
-    -1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f, -1.0f,  0.0f,
-     1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f, -1.0f,  0.0f,
-     1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f, -1.0f,  0.0f,
-    -1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f, -1.0f,  0.0f
-};
+	// Bottom Face (Y = -1.0f)
+	-1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,   0.0f, -1.0f,  0.0f,
+	 1.0f, -1.0f, -1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,   0.0f, -1.0f,  0.0f,
+	 1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,   0.0f, -1.0f,  0.0f,
+	-1.0f, -1.0f,  1.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,   0.0f, -1.0f,  0.0f
+    };
 
-// Indices for vertices order (6 indices per face * 6 faces = 36 total)
-GLuint indices[] = {
-    0, 1, 2,     0, 2, 3,    // Front
-    4, 5, 6,     4, 6, 7,    // Back
-    8, 9, 10,    8, 10, 11,  // Left
-    12, 13, 14,  12, 14, 15, // Right
-    16, 17, 18,  16, 18, 19, // Top
-    20, 21, 22,  20, 22, 23  // Bottom
-};
+    // Indices for vertices order (6 indices per face * 6 faces = 36 total)
+    std::vector<unsigned int> indices = {
+	0, 1, 2,     0, 2, 3,    // Front
+	4, 5, 6,     4, 6, 7,    // Back
+	8, 9, 10,    8, 10, 11,  // Left
+	12, 13, 14,  12, 14, 15, // Right
+	16, 17, 18,  16, 18, 19, // Top
+	20, 21, 22,  20, 22, 23  // Bottom
+    };
 
-    VAO VAO1;    // Generate VAO
-    VAO1.Bind(); // Bind VAO1
-    VBO VBO1(vertices, sizeof(vertices)); // Generates VBO and links it to vertices
-    EBO EBO1(indices, sizeof(indices));   // Generates EBO and links it to indices
-    GLsizei stride = 11 * sizeof(float);  // Set stride: number of elements per vertex
-    
-    // Links VBO attributes to VAO1
-    VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, stride, (void*)0);		       // 1. Position
-    VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, stride, (void*)(3 * sizeof(float))); // 2. Color    ~unused for now
-    VAO1.LinkAttrib(VBO1, 2, 2, GL_FLOAT, stride, (void*)(6 * sizeof(float))); // 3. TexCoord ~unused for now
-    VAO1.LinkAttrib(VBO1, 3, 3, GL_FLOAT, stride, (void*)(8 * sizeof(float))); // 4. Normals
-    VAO1.Unbind(); // Unbinds the VAO
-    VBO1.Unbind(); // Unbinds the VBO
-    EBO1.Unbind(); // Unbinds the EBO
+    auto cube = Mesh(vertices, indices); // Create mesh
 
     //-------------------------------------------------------------------------------------------------
     // Frame state variables
+    //-------------------------------------------------------------------------------------------------
     float currentTime	= glfwGetTime();    // Time of current frame
     float prevTime	= currentTime;	    // Time of previous frame
     float deltaTime	= 0.0f;		    // Time since last frame
@@ -225,24 +249,32 @@ GLuint indices[] = {
     model = glm::rotate(model, glm::radians(30.0f), glm::vec3(1.0f, -1.0f, 0.0f));
 
     //===================================================================================================
-    //
     // 6. Render Loop
     // --------------------------------------------------------------------------------------------------
     while (!glfwWindowShouldClose(window)) {
-    // TODO:: poll any continuously-held keys here.  
+
 
 	// Tick the clock
 	currentTime = glfwGetTime();
 	deltaTime   = currentTime - prevTime;
 	prevTime    = currentTime;
 	
-	// Process 
+	//-------------------------------------------------------------------------------------------------
+	// TODO:: poll any continuously-held keys here.  
+	
+	// Poll for Up/Down/Left/Right
 	rotationAxis = arrowKeyInput(window);
 	float angle = rotationSpeed * glm::length(rotationAxis) * deltaTime;
-
+	
+	// Apply input rotation
+	if (glm::length(rotationAxis) > 0.0f)
+	    model = glm::rotate(model, glm::radians(angle), glm::normalize(rotationAxis));
+	
+	// Poll for W/A/S/D
 	lightMovement = lightPosInput(window);
 	lightPos = lightPos + (lightMovement * movementSpeed * deltaTime);
 
+	// Poll for V 
 	if (smoothColorCycle) {
 	    t += 0.01;
 	    colorInput = cycleColor(t);
@@ -250,25 +282,27 @@ GLuint indices[] = {
 	
         glClearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a); // Set the clear color
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	  // Clear the screen
-	//
+    
+	// -------------------------------------------------------------------------------------------------
         // TODO: (2.3/2.5/2.6/2.7): use your shader program, compute and
         // upload this frame's transform/color/light uniforms, bind your
-        // cube's VAO, and issue the draw call. This is the part of the demo's
-        // render loop that was specific to drawing letters -- yours will be
-        // specific to drawing (and rotating, and recoloring, and relighting)
-        // your cube instead.
-		
-       shaderProgram.Activate();
+        // cube's VAO, and issue the draw call.
+    
+       shaderProgram.Activate(); // Activates the Shader Program
 
-	// Assigns different transformations to each matrix
-	if (glm::length(rotationAxis) > 0.0f)
-	    model = glm::rotate(model, glm::radians(angle), glm::normalize(rotationAxis));
 
-	// Outputs the matrices into the Vertex Shader
+	// -------------------------------------------------------------------------------------------------
+	// Uniforms
+	
+	// Set Uniform: model matrix
 	int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	// Set Uniform: view matrix
 	int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+	// Set Uniform: projection matrix
 	int projLoc = glGetUniformLocation(shaderProgram.ID, "proj");
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
@@ -284,14 +318,13 @@ GLuint indices[] = {
 	int isEmissiveLoc = glGetUniformLocation(shaderProgram.ID, "isEmissive");
 	glUniform1i(isEmissiveLoc, false);
 
-	VAO1.Bind(); // Bind the VAO
-	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
+	cube.Draw();
 
 	// Draw call for light	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::translate(lightModel, lightPos)));
 	glUniform3f(colorInputLoc, 1.0f, 1.0f, 1.0f);
 	glUniform1i(isEmissiveLoc, true);
-	glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
+	cube.Draw();
     
         glfwSwapBuffers(window); // Swap front and back buffers
         glfwPollEvents();        // Poll for and process events
@@ -299,9 +332,7 @@ GLuint indices[] = {
 
     //-----------------------------------------------------------------------------------------
     // CLEANUP --  TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created.
-    VAO1.Delete();
-    VBO1.Delete();
-    EBO1.Delete();
+    cube.Delete();
     shaderProgram.Delete();
     glfwTerminate();
 
