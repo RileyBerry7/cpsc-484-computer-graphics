@@ -1,6 +1,6 @@
-// =============================================================================
-// CPSC 484 - Assignment 1 - OpenGL Mesh Viewer (STARTER)
-// =============================================================================
+// ================================================================================================
+// CPSC 484 - Assignment 1 - OpenGL Mesh Viewer
+// ================================================================================================
 
 #include "glad.h"          // OpenGL function loader -- must be included before glfw3.h
 #include <GLFW/glfw3.h>    // window/context creation, input, timing
@@ -9,13 +9,14 @@
 #include <iostream>        // std::cerr / std::cout for error and debug messages
 #include <string>          // std::string -- used by isRunningUnderWSL() below, and by the titleString you'll add next
 
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
+#include<glm/glm.hpp>		       // Linear algebra library
+#include<glm/gtc/matrix_transform.hpp> //
+#include<glm/gtc/type_ptr.hpp>	       //
 
-#include "shader.h"
-#include "gl_objects.h"
+#include "shader.h"	// Shader class
+#include "gl_objects.h" // VAO, VBO, EBO
 
+//----------------------------------------------------------------------------------------------
 glm::vec3 lightPosInput(GLFWwindow* window) {
     glm::vec3 direction(0.0f);
 
@@ -42,7 +43,9 @@ glm::vec3 lightPosInput(GLFWwindow* window) {
 	direction = glm::normalize(direction);
     return direction;
 }
+//----------------------------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------------------------
 glm::vec3 arrowKeyInput(GLFWwindow* window) {
     glm::vec3 direction(0.0f);
 
@@ -67,7 +70,9 @@ glm::vec3 arrowKeyInput(GLFWwindow* window) {
 	direction = glm::normalize(direction);
     return direction;
 }
+//----------------------------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------------------------
 glm::vec3 cycleColor(float t) {
     const float pi = 3.14159265f;
     return glm::vec3(
@@ -76,6 +81,7 @@ glm::vec3 cycleColor(float t) {
         0.5f + 0.5f * sin(t + 4.0f * pi / 3.0f)
     );
 }
+//----------------------------------------------------------------------------------------------
 
 
 // GLOBALS
@@ -161,9 +167,10 @@ bool isRunningUnderWSL() {
     return false;
 }
 
-/* *************************************************** */
+//===================================================================================================================
 
 int main() {
+
     // ---- Step 0: steer GLFW away from WSLg's buggy Wayland backend -----
 #if defined(GLFW_VERSION_MAJOR) && (GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4))
     if (isRunningUnderWSL() && glfwPlatformSupported(GLFW_PLATFORM_X11)) {
@@ -181,21 +188,19 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // required on macOS to get a core-profile context at all; harmless no-op on Windows/Linux
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // required for macOS
 
-    // TODO: (2.1): pass your titleString.c_str() as the window title below
-    // instead of the placeholder "Assignment 1" literal.
+    // TODO: (2.1): pass your titleString.c_str() as the window title below.
+    // Open GLFW window
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, titleString.c_str(), nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-
     glfwMakeContextCurrent(window);
 
-    // Register our callbacks. GLFW calls these automatically -- we never
-    // call them ourselves.
+    // Register our callbacks. GLFW calls these automatically -- we never call them ourselves.
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
 
@@ -205,10 +210,7 @@ int main() {
         return -1;
     }
 
-    // TODO: (2.3): compile + link your shaders here, once vertexShaderSource
-    // and fragmentShaderSource exist above.
-    // unsigned int shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
-
+    // TODO: (2.3): compile + link your shaders here.
     Shader shaderProgram("default.vert", "default.frag");
 
     glEnable(GL_DEPTH_TEST); // near surfaces should hide far ones -- you'll want this once you have a 3D cube
@@ -269,70 +271,59 @@ GLuint indices[] = {
     20, 21, 22,  20, 22, 23  // Bottom
 };
 
-
-    // Generates Vertex Array Object and binds it
-    VAO VAO1;
-    VAO1.Bind();
-
-    VBO VBO1(vertices, sizeof(vertices)); // Generates Vertex Buffer Object and links it to vertices
-    EBO EBO1(indices, sizeof(indices));   // Generates Element Buffer Object and links it to indices
-
-    // Stride is now 11 * sizeof(float) because each vertex contains 11 floats total
-    GLsizei stride = 11 * sizeof(float);
-
+    VAO VAO1;    // Generate VAO
+    VAO1.Bind(); // Bind VAO1
+    VBO VBO1(vertices, sizeof(vertices)); // Generates VBO and links it to vertices
+    EBO EBO1(indices, sizeof(indices));   // Generates EBO and links it to indices
+    GLsizei stride = 11 * sizeof(float);  // Set stride: number of elements per vertex
+    
     // Links VBO attributes to VAO1
-    VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, stride, (void*)0);                          // Position (0)
-    VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, stride, (void*)(3 * sizeof(float)));        // Color (1)
-    VAO1.LinkAttrib(VBO1, 2, 2, GL_FLOAT, stride, (void*)(6 * sizeof(float)));        // TexCoord (2)
-    VAO1.LinkAttrib(VBO1, 3, 3, GL_FLOAT, stride, (void*)(8 * sizeof(float)));        // Normals (3)
+    VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, stride, (void*)0);		       // 1. Position
+    VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, stride, (void*)(3 * sizeof(float))); // 2. Color    ~unused for now
+    VAO1.LinkAttrib(VBO1, 2, 2, GL_FLOAT, stride, (void*)(6 * sizeof(float))); // 3. TexCoord ~unused for now
+    VAO1.LinkAttrib(VBO1, 3, 3, GL_FLOAT, stride, (void*)(8 * sizeof(float))); // 4. Normals
+    VAO1.Unbind(); // Unbinds the VAO
+    VBO1.Unbind(); // Unbinds the VBO
+    EBO1.Unbind(); // Unbinds the EBO
 
+    //-------------------------------------------------------------------------------------------------
+    // Frame state variables
+    float currentTime	= glfwGetTime();    // Time of current frame
+    float prevTime	= currentTime;	    // Time of previous frame
+    float deltaTime	= 0.0f;		    // Time since last frame
+    float rotationSpeed = 45.0f;	    // Degrees per second
+    float movementSpeed = 5.0f;		    // Model units per second
+    auto  rotationAxis  = glm::vec3(0.0f, 0.0f, 0.0f); // 3D axis of rotation (normalized)
+    auto  lightMovement = glm::vec3(0.0f, 0.0f, 0.0f); // 3D vector of movement (normalized)
 
-    // Unbind all to prevent accidentally modifying them
-    VAO1.Unbind();
-    VBO1.Unbind();
-    EBO1.Unbind();
+    // Initializes matrices
+    auto model	    = glm::mat4(1.0f); // Model matrix: cube
+    auto view	    = glm::mat4(1.0f); // View matrix : camera
+    auto proj	    = glm::mat4(1.0f); // Projection matrix: perspective
+    auto lightModel = glm::mat4(1.0f); // Model matrix: light
 
-    // Gets ID of uniform called "scale"
-    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
-
-    // Variables that help the rotation of the pyramid
-    float currentTime = glfwGetTime();
-    float prevTime = currentTime;
-    float deltaTime = 0.0f;
-    glm::vec3 direction(0.0f, 0.0f, 0.0f);
-    float rotationSpeed = 45.0f; // Degrees per second
-    glm:: vec lightMovement = glm::vec3(0.0f, 0.0f, 0.0f);
-    float movementSpeed = 5.0f;
-
-    // Initializes matrices so they are not the null matrix
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 proj = glm::mat4(1.0f);
-    glm::mat4 lightModel = model;
-
+    // Transform matrices
     model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
     model = glm::translate(model, glm::vec3(0.0f, 0.75f, 0.0f));
-    view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
-    proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+    view  = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
+    proj  = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
     lightModel = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
     
-
-    // ---- Step 6 (numbering matches the Assignment 0 demo): render loop --
+    //===================================================================================================
+    // 6. Render Loop
+    // --------------------------------------------------------------------------------------------------
     while (!glfwWindowShouldClose(window)) {
-        // TODO:: poll any continuously-held keys here, if you're using that
-        // input style for anything (see the demo's arrowKeyInput() for the
-        // pattern, and its INPUT HANDLING comment block for when polling is
-        // the right tool vs. when the key_callback below is).
-    
+    // TODO:: poll any continuously-held keys here.  
 
 	// Tick the clock
 	currentTime = glfwGetTime();
 	deltaTime   = currentTime - prevTime;
 	prevTime    = currentTime;
-
-	direction = arrowKeyInput(window);
-	float angle = rotationSpeed * glm::length(direction) * deltaTime;
+	
+	// Process 
+	rotationAxis = arrowKeyInput(window);
+	float angle = rotationSpeed * glm::length(rotationAxis) * deltaTime;
 
 	lightMovement = lightPosInput(window);
 	lightPos = lightPos + (lightMovement * movementSpeed * deltaTime);
@@ -355,8 +346,8 @@ GLuint indices[] = {
        shaderProgram.Activate();
 
 	// Assigns different transformations to each matrix
-	if (glm::length(direction) > 0.0f)
-	    model = glm::rotate(model, glm::radians(angle), glm::normalize(direction));
+	if (glm::length(rotationAxis) > 0.0f)
+	    model = glm::rotate(model, glm::radians(angle), glm::normalize(rotationAxis));
 
 	// Outputs the matrices into the Vertex Shader
 	int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
@@ -394,17 +385,15 @@ GLuint indices[] = {
         glfwPollEvents();
     }
 
-    // ---- Cleanup ---------------------------------------------------------
-    // TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created
-    // above, the same way the Assignment 0 demo cleans up its letter
-    // buffers and shader program before glfwTerminate().
-    // Delete all the objects we've created
+    // ---- Cleanup --------------------------------------------------------------------------
+    // TODO:: delete whatever VAOs/VBOs/EBOs and shader program you created.
 	VAO1.Delete();
 	VBO1.Delete();
 	EBO1.Delete();
 	shaderProgram.Delete();
-
     glfwTerminate();
+
+    //-----------------------------------------------------------------------------------------
     return 0;
 }
 
@@ -487,8 +476,9 @@ unsigned int createShaderProgram(const char* vertexSrc, const char* fragmentSrc)
         glGetProgramInfoLog(program, 512, nullptr, infoLog);
         std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
-
+    
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     return program;
 }
+//==========================================================================================
