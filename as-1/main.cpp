@@ -55,6 +55,7 @@ glm::vec3 cycleColor(float t) {
 glm::vec3 colorInput(1.0f, 1.0f, 1.0f); // start as white
 float t = 0.0f;
 bool smoothColorCycle = false;
+glm::vec3 lightPos(-4.0f, 10.0f, 4.0f);
 
 //TODO: (2.1) declare your own window-title string here. See Assignment 1
 // Instructions, Section 2.1. Something like:
@@ -336,6 +337,9 @@ GLuint indices[] = {
 
 	int colorInputLoc = glGetUniformLocation(shaderProgram.ID, "colorInput");
 	glUniform3f(colorInputLoc, colorInput.r, colorInput.g, colorInput.b);
+
+	int lightPosLoc = glGetUniformLocation(shaderProgram.ID, "lightPos");
+	glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 
 	// Bind the VAO so OpenGL knows to use it
 	VAO1.Bind();
