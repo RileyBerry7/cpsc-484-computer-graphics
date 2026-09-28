@@ -46,29 +46,52 @@ glm::mat4 Shape::getModelMatrix() const {
     // unscaled -- so the Insert menu still works and you can see your
     // geometry, which is the right place to start.
 
-    auto S = glm::mat4(1.0f);
-    auto Rx = glm::mat4(1.0f);
-    auto Ry = glm::mat4(1.0f);
-    auto Rz = glm::mat4(1.0f);
-    auto T = glm::mat4(1.0f);
+    auto S = glm::mat4(1.0f);  // Scale matrix
+    auto Rx = glm::mat4(1.0f); // x-axis rotation matrix
+    auto Ry = glm::mat4(1.0f); // y-axis rotation matrix 
+    auto Rz = glm::mat4(1.0f); // z-axis rotation matrix
+    auto T = glm::mat4(1.0f);  // Translation matrix
+   
+    if (useUniformScale) {
+        // Uniform scaling
+        S = glm::mat4(scale); 
+        S[3][3] = 1.0f;
     
+    } else {
+        // Non-uniform scaling 
+        S = glm::mat4(scaleX, 0.0f, 0.0f, 0.0f,
+                      0.0f, scaleY, 0.0f, 0.0f,
+                      0.0f, 0.0f, scaleZ, 0.0f,
+                      0.0f, 0.0f, 0.0f, 1.0f);
+    }
 
-    float x_scale = useUniformScale ? scale : scaleX;
-    float y_scale = useUniformScale ? scale : scaleY;
-    float z_scale = useUniformScale ? scale : scaleZ;
+    float theta; // Rotation angle in radians
 
-    S = glm::mat4(x_scale, 0.0f, 0.0f, 0.0f,
-                  0.0f, y_scale, 0.0f, 0.0f,
-                  0.0f, 0.0f, z_scale, 0.0f,
-                  0.0f, 0.0f, 0.0f, 1.0f);
-    float theta;
+    // x-axis rotation
     theta = glm::radians(angleX);
     Rx[1][1] = cos(theta);
     Rx[1][2] = sin(theta);
     Rx[2][1] = -sin(theta);
     Rx[2][2] = cos(theta);
 
+    // y-axis rotation
+    theta = glm::radians(angleY);
+    Ry[0][0] = cos(theta);
+    Ry[0][2] = -sin(theta);
+    Ry[2][0] = sin(theta);
+    Ry[2][2] = cos(theta);
 
+    // z-axis rotation
+    theta = glm::radians(angleZ);
+    Rz[0][0] = cos(theta);
+    Rz[0][1] = sin(theta);
+    Rz[1][0] = -sin(theta);
+    Rz[1][1] = cos(theta);
+
+    // Translation
+    T[3][0] = x;
+    T[3][1] = y;
+    T[3][2] = z;
 
     return T * Rz * Ry * Rx * S;
 }
