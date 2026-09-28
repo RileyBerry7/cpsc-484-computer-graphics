@@ -53,16 +53,23 @@ glm::mat4 Shape::getModelMatrix() const {
     auto T = glm::mat4(1.0f);
     
 
-    int x_scale = useUniformScale ? scale : scaleX;
-    int y_scale = useUniformScale ? scale : scaleY;
-    int z_scale = useUniformScale ? scale : scaleZ;
+    float x_scale = useUniformScale ? scale : scaleX;
+    float y_scale = useUniformScale ? scale : scaleY;
+    float z_scale = useUniformScale ? scale : scaleZ;
 
     S = glm::mat4(x_scale, 0.0f, 0.0f, 0.0f,
                   0.0f, y_scale, 0.0f, 0.0f,
                   0.0f, 0.0f, z_scale, 0.0f,
                   0.0f, 0.0f, 0.0f, 1.0f);
+    float theta;
+    theta = glm::radians(angleX);
+    Rx[1][1] = cos(theta);
+    Rx[1][2] = sin(theta);
+    Rx[2][1] = -sin(theta);
+    Rx[2][2] = cos(theta);
 
 
-    return T * Rz * Ry * Rz * S;
+
+    return T * Rz * Ry * Rx * S;
 }
 
