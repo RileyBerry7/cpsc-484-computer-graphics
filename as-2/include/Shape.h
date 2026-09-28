@@ -194,7 +194,7 @@ private:
     float defaultX, defaultY, defaultZ;
     float defaultScaleX, defaultScaleY, defaultScaleZ;
     float defaultScale;
-	bool defaultUseUniformScale;
+    bool defaultUseUniformScale;
     float defaultRotationX, defaultRotationY, defaultRotationZ;
     int defaultColorIndex;
     float defaultCustomColor[3];  // For custom color if used    

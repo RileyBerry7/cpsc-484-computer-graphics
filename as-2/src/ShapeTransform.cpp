@@ -20,7 +20,7 @@
 #include <cmath>
 
 glm::mat4 Shape::getModelMatrix() const {
-    // TODO(transforms): compose the model matrix as T * Rx * Ry * Rz * S
+    // TODO:(transforms): compose the model matrix as T * Rx * Ry * Rz * S
     // Return the 4x4 matrix that takes this shape from its own space into
     // the world, accounting for position, rotation about all three axes, and
     // scale.
@@ -45,6 +45,24 @@ glm::mat4 Shape::getModelMatrix() const {
     // Returning the identity leaves every shape at the origin, unrotated and
     // unscaled -- so the Insert menu still works and you can see your
     // geometry, which is the right place to start.
-    return glm::mat4(1.0f);
+
+    auto S = glm::mat4(1.0f);
+    auto Rx = glm::mat4(1.0f);
+    auto Ry = glm::mat4(1.0f);
+    auto Rz = glm::mat4(1.0f);
+    auto T = glm::mat4(1.0f);
+    
+
+    int x_scale = useUniformScale ? scale : scaleX;
+    int y_scale = useUniformScale ? scale : scaleY;
+    int z_scale = useUniformScale ? scale : scaleZ;
+
+    S = glm::mat4(x_scale, 0.0f, 0.0f, 0.0f,
+                  0.0f, y_scale, 0.0f, 0.0f,
+                  0.0f, 0.0f, z_scale, 0.0f,
+                  0.0f, 0.0f, 0.0f, 1.0f);
+
+
+    return T * Rz * Ry * Rz * S;
 }
 
