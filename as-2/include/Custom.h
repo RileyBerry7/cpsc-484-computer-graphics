@@ -30,7 +30,6 @@ private:
     void addTriangle(int i1, int i2, int i3);
     void addQuad(int p1, int p2, int p3, int p4);
     void GenerateBismuth(glm::vec3 center, float width, float depth, int step_count, float height_step, float shrink_rate);
-    void CalculateSmoothNormals();
 };
 
 #endif

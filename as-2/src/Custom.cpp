@@ -32,21 +32,6 @@ Custom::~Custom() {
     glDeleteBuffers(1, &EBO);
 }
 
-//-----------------------------------------------------------------------------------------------------
-// HELPERS
-
-// Helper to push a clean 3-index triangle face
-void Custom::addTriangle(int i1, int i2, int i3) {
-    faces.push_back({i1, i2, i3});
-}
-
-// Helper to append a 4-corner quad face as two clean triangles
-void Custom::addQuad(int p1, int p2, int p3, int p4) {
-    addTriangle(p1, p2, p3);
-    addTriangle(p3, p4, p1);
-}
-//-----------------------------------------------------------------------------------------------------
-
 void Custom::setupCustom() {
     std::vector<float> vertexData;
     std::vector<unsigned int> indexData;
@@ -82,8 +67,8 @@ void Custom::setupCustom() {
     GenerateBismuth(c + glm::vec3(0.0f, 0.0f, 0.0f), w, d, step_count, height_step, shrink_rate);
     //----------------------------------------------------------------------------------------------------
     
-    //calculateNormals();
-    CalculateSmoothNormals();
+    calculateNormals();
+    //CalculateSmoothNormals();
 
     // The shape's own (u, v) grid parameters, the same way the sphere uses
     // its own. flipU for the same handedness reason as Sphere: a generator that
@@ -123,7 +108,7 @@ void Custom::setupCustom() {
         if (!usable) continue;
 
         // Assign color
-        colorIndex = 5; // Default to yellow
+        colorIndex = 5;
         glm::vec3 color = (colorIndex == 31)
             ? glm::vec3(customColor[0], customColor[1], customColor[2])
             : glm::vec3(colorPresets[colorIndex].color[0],
@@ -214,548 +199,189 @@ void Custom::draw(GLuint shaderProgram) {
     }
 }
 
-void Custom::GenerateBismuth(
-    glm::vec3 center,
-    float width,
-    float depth,
-    int step_count,
-    float height_step,
-    float shrink_rate)
-{
-    // -------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+// HELPERS
+
+// Helper to push a clean 3-index triangle face
+void Custom::addTriangle(int i1, int i2, int i3) {
+    faces.push_back({i1, i2, i3});
+}
+
+// Helper to append a 4-corner quad face as two clean triangles
+void Custom::addQuad(int p1, int p2, int p3, int p4) {
+    addTriangle(p1, p2, p3);
+    addTriangle(p3, p4, p1);
+}
+
+//-----------------------------------------------------------------------------------------------------
+// GENERATE BISMUTH - recursive
+void Custom::GenerateBismuth(glm::vec3 center, float width, float depth, int step_count, float height_step, float shrink_rate) {
     // Random generator
-    // -------------------------------------------------------------------------
     static std::random_device rd;
     static std::mt19937 gen(rd());
-
     std::uniform_real_distribution<float> rand01(0.0f, 1.0f);
+    auto randomFloat = [&](float minValue, float maxValue) -> float { return minValue + (maxValue - minValue) * rand01(gen); };
+    auto randomSign = [&]() -> float { return (rand01(gen) < 0.5f) ? -1.0f : 1.0f; };
 
-    auto randomFloat = [&](float minValue, float maxValue) -> float
-    {
-        return minValue + (maxValue - minValue) * rand01(gen);
-    };
-
-    auto randomSign = [&]() -> float
-    {
-        return (rand01(gen) < 0.5f) ? -1.0f : 1.0f;
-    };
-
-    // -------------------------------------------------------------------------
     // Safety
-    // -------------------------------------------------------------------------
-    if (step_count <= 0 || width <= 0.01f || depth <= 0.01f)
-        return;
-
-    // Prevent pathological recursion / geometry explosions.
+    if (step_count <= 0 || width <= 0.01f || depth <= 0.01f) return;
     step_count = std::min(step_count, 64);
 
     glm::vec3 c = center;
-
     float w = width;
     float d = depth;
 
-    // -------------------------------------------------------------------------
-    // Random personality for this particular crystal branch.
-    //
-    // These remain constant during this recursive branch so the branch has
-    // some coherent shape instead of looking like completely independent
-    // random layers.
-    // -------------------------------------------------------------------------
-    const float branchWobble =
-        randomFloat(0.015f, 0.055f);
-
-    const float branchDepthWobble =
-        randomFloat(0.015f, 0.055f);
-
-    const float verticalWobble =
-        randomFloat(0.04f, 0.12f);
-
-    // Slightly rectangular crystals are more interesting than perfect squares.
-    const float aspectBias =
-        randomFloat(0.88f, 1.12f);
+    // Branch randomness
+    const float branchWobble = randomFloat(0.015f, 0.055f);
+    const float branchDepthWobble = randomFloat(0.015f, 0.055f);
+    const float verticalWobble = randomFloat(0.04f, 0.12f);
+    const float aspectBias = randomFloat(0.88f, 1.12f); // Encourages rectangular crystals
 
     d *= aspectBias;
+    glm::vec2 drift(randomFloat(-0.015f, 0.015f), randomFloat(-0.015f, 0.015f));
 
-    // Persistent drift gives the terraces a subtle crooked/crystalline shape.
-    glm::vec2 drift(
-        randomFloat(-0.015f, 0.015f),
-        randomFloat(-0.015f, 0.015f)
-    );
+    for (int step = 0; step < step_count; ++step) {
+        if (w <= 0.05f || d <= 0.05f) break;
 
-    for (int step = 0; step < step_count; ++step)
-    {
-        if (w <= 0.05f || d <= 0.05f)
-            break;
-
-        // ---------------------------------------------------------------------
         // Layer-specific randomness
-        // ---------------------------------------------------------------------
-
-        // Larger random variation near the beginning, becoming less dramatic
-        // toward the center.
-        const float progress =
-            static_cast<float>(step) /
-            static_cast<float>(std::max(1, step_count - 1));
-
-        const float variation =
-            1.0f - progress * 0.55f;
-
-        // Random dimensions for this individual terrace.
-        float layerW =
-            w * randomFloat(
-                1.0f - branchWobble * variation,
-                1.0f + branchWobble * variation
-            );
-
-        float layerD =
-            d * randomFloat(
-                1.0f - branchDepthWobble * variation,
-                1.0f + branchDepthWobble * variation
-            );
-
-        // Prevent accidental expansion.
-        layerW = std::min(layerW, w * 1.04f);
+        const float progress = static_cast<float>(step) / static_cast<float>(std::max(1, step_count - 1));
+        const float variation = 1.0f - progress * 0.55f;
+        float layerW = w * randomFloat(1.0f - branchWobble * variation, 1.0f + branchWobble * variation);
+        float layerD = d * randomFloat(1.0f - branchDepthWobble * variation, 1.0f + branchDepthWobble * variation);
+        layerW = std::min(layerW, w * 1.04f); // Prevent accidental expansion.
         layerD = std::min(layerD, d * 1.04f);
-
         float hW = layerW * 0.5f;
         float hD = layerD * 0.5f;
 
-        // ---------------------------------------------------------------------
         // Random horizontal displacement
-        //
-        // Realistic crystals generally don't have every terrace perfectly
-        // centered over the previous one.
-        // ---------------------------------------------------------------------
         drift.x += randomFloat(-0.025f, 0.025f);
         drift.y += randomFloat(-0.025f, 0.025f);
-
-        // Keep drift bounded.
         drift.x = glm::clamp(drift.x, -width * 0.12f, width * 0.12f);
         drift.y = glm::clamp(drift.y, -depth * 0.12f, depth * 0.12f);
+        glm::vec3 layerCenter = c + glm::vec3(drift.x, drift.y, 0.0f);
 
-        glm::vec3 layerCenter =
-            c + glm::vec3(drift.x, drift.y, 0.0f);
-
-        // ---------------------------------------------------------------------
         // Bottom corners
-        //
-        // Instead of making every layer a perfect rectangle, each corner gets
-        // a small independent perturbation.
-        // ---------------------------------------------------------------------
-        const float cornerJitter =
-            std::min(layerW, layerD) *
-            randomFloat(0.005f, 0.035f);
+        const float cornerJitter = std::min(layerW, layerD) * randomFloat(0.005f, 0.035f);
 
-        glm::vec3 bo1 =
-            layerCenter +
-            glm::vec3(
-                -hW + randomFloat(-cornerJitter, cornerJitter),
-                -hD + randomFloat(-cornerJitter, cornerJitter),
-                0.0f
-            );
-
-        glm::vec3 bo2 =
-            layerCenter +
-            glm::vec3(
-                 hW + randomFloat(-cornerJitter, cornerJitter),
-                -hD + randomFloat(-cornerJitter, cornerJitter),
-                0.0f
-            );
-
-        glm::vec3 bo3 =
-            layerCenter +
-            glm::vec3(
-                 hW + randomFloat(-cornerJitter, cornerJitter),
-                 hD + randomFloat(-cornerJitter, cornerJitter),
-                0.0f
-            );
-
-        glm::vec3 bo4 =
-            layerCenter +
-            glm::vec3(
-                -hW + randomFloat(-cornerJitter, cornerJitter),
-                 hD + randomFloat(-cornerJitter, cornerJitter),
-                0.0f
-            );
-
-        // ---------------------------------------------------------------------
+        glm::vec3 bo1 = layerCenter + glm::vec3(-hW + randomFloat(-cornerJitter, cornerJitter),
+                                                -hD + randomFloat(-cornerJitter, cornerJitter), 0.0f);
+        glm::vec3 bo2 = layerCenter + glm::vec3(hW + randomFloat(-cornerJitter, cornerJitter), 
+                                                -hD + randomFloat(-cornerJitter, cornerJitter), 0.0f);
+        glm::vec3 bo3 = layerCenter + glm::vec3(hW + randomFloat(-cornerJitter, cornerJitter), 
+                                                hD + randomFloat(-cornerJitter, cornerJitter), 0.0f);
+        glm::vec3 bo4 = layerCenter + glm::vec3(-hW + randomFloat(-cornerJitter, cornerJitter), 
+                                                hD + randomFloat(-cornerJitter, cornerJitter), 0.0f);
         // Random terrace height
-        //
-        // Keep the variation subtle. Large random heights make the crystal
-        // look like a staircase rather than naturally deposited layers.
-        // ---------------------------------------------------------------------
-        float currentHeight =
-            height_step *
-            randomFloat(
-                1.0f - verticalWobble * variation,
-                1.0f + verticalWobble * variation
-            );
-
+        float currentHeight = height_step * randomFloat(1.0f - verticalWobble * variation, 1.0f + verticalWobble * variation);
         currentHeight = std::max(currentHeight, height_step * 0.35f);
 
-        // ---------------------------------------------------------------------
         // Extrude upward
-        // ---------------------------------------------------------------------
         glm::vec3 to1 = bo1 + glm::vec3(0.0f, 0.0f, currentHeight);
         glm::vec3 to2 = bo2 + glm::vec3(0.0f, 0.0f, currentHeight);
         glm::vec3 to3 = bo3 + glm::vec3(0.0f, 0.0f, currentHeight);
         glm::vec3 to4 = bo4 + glm::vec3(0.0f, 0.0f, currentHeight);
-
         c.z += currentHeight;
 
-        // ---------------------------------------------------------------------
         // Outer vertical walls
-        // ---------------------------------------------------------------------
         int vStart = static_cast<int>(vertices.size());
-
-        vertices.insert(
-            vertices.end(),
-            {
-                bo1, bo2, bo3, bo4,
-                to1, to2, to3, to4
-            }
-        );
-
+        vertices.insert(vertices.end(), {bo1, bo2, bo3, bo4, to1, to2, to3, to4});
         addQuad(vStart + 0, vStart + 1, vStart + 5, vStart + 4);
         addQuad(vStart + 1, vStart + 2, vStart + 6, vStart + 5);
         addQuad(vStart + 2, vStart + 3, vStart + 7, vStart + 6);
         addQuad(vStart + 3, vStart + 0, vStart + 4, vStart + 7);
 
-        // ---------------------------------------------------------------------
         // Calculate the next terrace.
-        //
-        // Instead of subtracting a fixed amount every time, use a mostly
-        // multiplicative reduction with random variation. This produces much
-        // more organic terraces.
-        // ---------------------------------------------------------------------
-        float baseShrinkW =
-            randomFloat(0.055f, 0.13f);
-
-        float baseShrinkD =
-            randomFloat(0.055f, 0.13f);
-
-        // Preserve the caller's shrink_rate as the main control.
-        float normalizedShrink =
-            glm::clamp(
-                shrink_rate /
-                std::max(0.001f, std::max(width, depth)),
-                0.015f,
-                0.35f
-            );
-
-        float shrinkW =
-            glm::max(
-                shrink_rate * randomFloat(0.70f, 1.30f),
-                width * normalizedShrink * baseShrinkW
-            );
-
-        float shrinkD =
-            glm::max(
-                shrink_rate * randomFloat(0.70f, 1.30f),
-                depth * normalizedShrink * baseShrinkD
-            );
-
+        float baseShrinkW = randomFloat(0.055f, 0.13f);
+        float baseShrinkD = randomFloat(0.055f, 0.13f);
+        float normalizedShrink = glm::clamp(shrink_rate / std::max(0.001f, std::max(width, depth)), 0.015f, 0.35f);
+        float shrinkW = glm::max(shrink_rate * randomFloat(0.70f, 1.30f), width * normalizedShrink * baseShrinkW);
+        float shrinkD = glm::max(shrink_rate * randomFloat(0.70f, 1.30f), depth * normalizedShrink * baseShrinkD);
         w -= shrinkW;
         d -= shrinkD;
 
-        // ---------------------------------------------------------------------
         // Final cap
-        // ---------------------------------------------------------------------
-        if (w <= 0.05f || d <= 0.05f || step == step_count - 1)
-        {
-            // Occasionally make the final cap slightly irregular.
+        if (w <= 0.05f || d <= 0.05f || step == step_count - 1) {
             glm::vec3 capCenter = c;
-
-            float capW =
-                std::max(0.01f, layerW * randomFloat(0.15f, 0.55f));
-
-            float capD =
-                std::max(0.01f, layerD * randomFloat(0.15f, 0.55f));
-
-            glm::vec3 cap1 =
-                capCenter + glm::vec3(-capW, -capD, 0.0f);
-
-            glm::vec3 cap2 =
-                capCenter + glm::vec3( capW, -capD, 0.0f);
-
-            glm::vec3 cap3 =
-                capCenter + glm::vec3( capW,  capD, 0.0f);
-
-            glm::vec3 cap4 =
-                capCenter + glm::vec3(-capW,  capD, 0.0f);
-
+            float capW = std::max(0.01f, layerW * randomFloat(0.15f, 0.55f));
+            float capD = std::max(0.01f, layerD * randomFloat(0.15f, 0.55f));
+            glm::vec3 cap1 = capCenter + glm::vec3(-capW, -capD, 0.0f);
+            glm::vec3 cap2 = capCenter + glm::vec3(capW, -capD, 0.0f);
+            glm::vec3 cap3 = capCenter + glm::vec3(capW, capD, 0.0f);
+            glm::vec3 cap4 = capCenter + glm::vec3(-capW, capD, 0.0f);
             int capStart = static_cast<int>(vertices.size());
-
-            vertices.insert(
-                vertices.end(),
-                {
-                    cap1, cap2, cap3, cap4
-                }
-            );
-
-            addQuad(
-                capStart + 0,
-                capStart + 3,
-                capStart + 2,
-                capStart + 1
-            );
-
+            vertices.insert(vertices.end(), {cap1, cap2, cap3, cap4});
+            addQuad(capStart + 0, capStart + 3, capStart + 2, capStart + 1);
             break;
         }
-
-        // ---------------------------------------------------------------------
-        // Inner terrace dimensions
-        // ---------------------------------------------------------------------
-        float nHW = w * 0.5f;
+        float nHW = w * 0.5f; // Inner terrace dimensions
         float nHD = d * 0.5f;
-
-        // Random asymmetry in the next terrace.
-        float innerOffsetX =
-            randomFloat(-layerW, layerW) * 0.035f;
-
-        float innerOffsetY =
-            randomFloat(-layerD, layerD) * 0.035f;
-
-        glm::vec3 innerCenter =
-            c +
-            glm::vec3(
-                innerOffsetX,
-                innerOffsetY,
-                0.0f
-            );
-
+        float innerOffsetX = randomFloat(-layerW, layerW) * 0.035f;
+        float innerOffsetY = randomFloat(-layerD, layerD) * 0.035f;
+        glm::vec3 innerCenter = c + glm::vec3(innerOffsetX, innerOffsetY, 0.0f);
+        
         // Slightly different shrink on each side.
-        float leftScale  = randomFloat(0.94f, 1.02f);
+        float leftScale = randomFloat(0.94f, 1.02f);
         float rightScale = randomFloat(0.94f, 1.02f);
         float frontScale = randomFloat(0.94f, 1.02f);
-        float backScale  = randomFloat(0.94f, 1.02f);
+        float backScale = randomFloat(0.94f, 1.02f);
 
-        glm::vec3 ti1 =
-            innerCenter +
-            glm::vec3(
-                -nHW * leftScale,
-                -nHD * frontScale,
-                0.0f
-            );
+        glm::vec3 ti1 = innerCenter + glm::vec3(-nHW * leftScale, -nHD * frontScale, 0.0f);
+        glm::vec3 ti2 = innerCenter + glm::vec3(nHW * rightScale, -nHD * frontScale, 0.0f);
+        glm::vec3 ti3 = innerCenter + glm::vec3(nHW * rightScale, nHD * backScale, 0.0f);
+        glm::vec3 ti4 = innerCenter + glm::vec3(-nHW * leftScale, nHD * backScale, 0.0f);
 
-        glm::vec3 ti2 =
-            innerCenter +
-            glm::vec3(
-                 nHW * rightScale,
-                -nHD * frontScale,
-                0.0f
-            );
+        int lipStart = static_cast<int>(vertices.size()); // Terrace lips
+        vertices.insert(vertices.end(), {to1, to2, to3, to4, ti1, ti2, ti3, ti4});
 
-        glm::vec3 ti3 =
-            innerCenter +
-            glm::vec3(
-                 nHW * rightScale,
-                 nHD * backScale,
-                0.0f
-            );
+        addQuad(lipStart + 0, lipStart + 1, lipStart + 5, lipStart + 4);
+        addQuad(lipStart + 1, lipStart + 2, lipStart + 6, lipStart + 5);
+        addQuad(lipStart + 2, lipStart + 3, lipStart + 7, lipStart + 6);
+        addQuad(lipStart + 3, lipStart + 0, lipStart + 4, lipStart + 7);
 
-        glm::vec3 ti4 =
-            innerCenter +
-            glm::vec3(
-                -nHW * leftScale,
-                 nHD * backScale,
-                0.0f
-            );
-
-        // ---------------------------------------------------------------------
-        // Terrace lips
-        // ---------------------------------------------------------------------
-        int lipStart = static_cast<int>(vertices.size());
-
-        vertices.insert(
-            vertices.end(),
-            {
-                to1, to2, to3, to4,
-                ti1, ti2, ti3, ti4
-            }
-        );
-
-        addQuad(lipStart + 0, lipStart + 1,
-                lipStart + 5, lipStart + 4);
-
-        addQuad(lipStart + 1, lipStart + 2,
-                lipStart + 6, lipStart + 5);
-
-        addQuad(lipStart + 2, lipStart + 3,
-                lipStart + 7, lipStart + 6);
-
-        addQuad(lipStart + 3, lipStart + 0,
-                lipStart + 4, lipStart + 7);
-
-        // ---------------------------------------------------------------------
         // Branching
-        //
-        // Branches are more likely on larger terraces and become less likely
-        // as the crystal gets smaller.
-        // ---------------------------------------------------------------------
-        if (step >= 2 && w > width * 0.22f)
-        {
-            const int remainingSteps =
-                step_count - step - 1;
-
-            if (remainingSteps > 3)
-            {
-                float sizeFactor =
-                    glm::clamp(
-                        w / std::max(width, 0.001f),
-                        0.0f,
-                        1.0f
-                    );
-
-                // Moderate branching probability.
-                float branchChance =
-                    0.025f +
-                    sizeFactor * 0.11f;
-
-                // Random variation prevents every crystal from having the
-                // same branching pattern.
-                branchChance *=
-                    randomFloat(0.65f, 1.35f);
-
-                // Don't allow runaway branching.
-                branchChance =
-                    glm::clamp(branchChance, 0.015f, 0.16f);
-
-                // Smaller branches are preferable to simply duplicating the
-                // entire parent.
-                float childScale =
-                    randomFloat(0.32f, 0.52f);
-
-                float childW =
-                    w * childScale;
-
-                float childD =
-                    d * childScale *
-                    randomFloat(0.85f, 1.15f);
-
-                // Randomly select which sides are eligible for branches.
-                // This produces much more natural asymmetry.
-                for (int side = 0; side < 4; ++side)
-                {
-                    if (rand01(gen) >= branchChance)
-                        continue;
-
+        if ( step >= 2 && w > width * 0.22f ) {
+            const int remainingSteps = step_count - step - 1;
+            if ( remainingSteps > 3 ) {
+                float sizeFactor = glm::clamp(w / std::max(width, 0.001f), 0.0f, 1.0f);
+                float branchChance = 0.025f + sizeFactor * 0.11f; // Moderate branching probability.
+                branchChance *= randomFloat(0.65f, 1.35f);
+                branchChance = glm::clamp(branchChance, 0.015f, 0.16f);
+                float childScale = randomFloat(0.32f, 0.52f);
+                float childW = w * childScale;
+                float childD = d * childScale * randomFloat(0.85f, 1.15f);
+                for ( int side = 0; side < 4; ++side ) {
+                    if ( rand01(gen) >= branchChance ) continue;
                     glm::vec3 direction(0.0f);
 
-                    switch (side)
-                    {
+                    switch ( side ) {
                         case 0:
-                            direction = glm::vec3( 1.0f, 0.0f, 0.0f);
+                            direction = glm::vec3(1.0f, 0.0f, 0.0f);
                             break;
-
                         case 1:
                             direction = glm::vec3(-1.0f, 0.0f, 0.0f);
                             break;
-
                         case 2:
-                            direction = glm::vec3(0.0f,  1.0f, 0.0f);
+                            direction = glm::vec3(0.0f, 1.0f, 0.0f);
                             break;
-
                         case 3:
                             direction = glm::vec3(0.0f, -1.0f, 0.0f);
                             break;
                     }
+                    float edgeDistance = std::max(layerW, layerD) * randomFloat(0.72f, 1.05f); // Push branch outwards
+                    float verticalOffset = height_step * randomFloat(-0.35f, 0.45f);
+                    glm::vec3 sideways(randomFloat(-0.18f, 0.18f), randomFloat(-0.18f, 0.18f), 0.0f);
+                    glm::vec3 spawnPos = c + direction * edgeDistance + sideways * std::min(layerW, layerD) 
+                                           + glm::vec3(0.0f, 0.0f, verticalOffset);
+                    float childHeight = height_step * randomFloat(0.82f, 1.12f); // Randomize branch height
+                    float childShrink = shrink_rate * randomFloat(0.95f, 1.35f); // Branches shrink faster than parent
 
-                    // Push the branch outward beyond the parent terrace.
-                    float edgeDistance =
-                        std::max(
-                            layerW,
-                            layerD
-                        ) * randomFloat(0.72f, 1.05f);
-
-                    // Branches aren't perfectly horizontal.
-                    float verticalOffset =
-                        height_step *
-                        randomFloat(-0.35f, 0.45f);
-
-                    // Add sideways randomness so branches don't form a
-                    // perfectly symmetrical four-point pattern.
-                    glm::vec3 sideways(
-                        randomFloat(-0.18f, 0.18f),
-                        randomFloat(-0.18f, 0.18f),
-                        0.0f
-                    );
-
-                    glm::vec3 spawnPos =
-                        c +
-                        direction * edgeDistance +
-                        sideways * std::min(layerW, layerD) +
-                        glm::vec3(
-                            0.0f,
-                            0.0f,
-                            verticalOffset
-                        );
-
-                    // Randomize branch height progression slightly.
-                    float childHeight =
-                        height_step *
-                        randomFloat(0.82f, 1.12f);
-
-                    // Branches generally shrink a little faster than the
-                    // main body.
-                    float childShrink =
-                        shrink_rate *
-                        randomFloat(0.95f, 1.35f);
-
-                    Custom::GenerateBismuth(
-                        spawnPos,
-                        childW,
-                        childD,
-                        remainingSteps,
-                        childHeight,
-                        childShrink
-                    );
+                    // Recursive call
+                    Custom::GenerateBismuth(spawnPos, childW, childD, remainingSteps, childHeight, childShrink);
                 }
             }
         }
-
-        // ---------------------------------------------------------------------
-        // Move the working center to the inner terrace.
-        // ---------------------------------------------------------------------
-        c.x = innerCenter.x;
+        c.x = innerCenter.x; // Move center to the inner terrace.
         c.y = innerCenter.y;
     }
 }
-
-void Custom::CalculateSmoothNormals() {
-    // Initialize the normal vector to match the exact size of vertices filled with zero vectors
-    normals.assign(vertices.size(), glm::vec3(0.0f));
-
-    // Loop through every single generated face to accumulate cross-product triangle normals
-    for (const auto& face : faces) {
-        if (face.size() < 3) continue;
-
-        int i1 = face[0];
-        int i2 = face[1];
-        int i3 = face[2];
-
-        // Gather vertex positions
-        glm::vec3 v1 = vertices[i1];
-        glm::vec3 v2 = vertices[i2];
-        glm::vec3 v3 = vertices[i3];
-
-        // Calculate surface edge directions [13.2]
-        glm::vec3 edge1 = v2 - v1;
-        glm::vec3 edge2 = v3 - v1;
-
-        // Cross product represents the perpendicular vector of the triangle surface face [13.2]
-        glm::vec3 faceNormal = glm::cross(edge1, edge2);
-
-        // Accumulate this face normal into all three shared vertex indices [13.2, 13.3]
-        normals[i1] += faceNormal;
-        normals[i2] += faceNormal;
-        normals[i3] += faceNormal;
-    }
-
-    // Normalize all accumulated vectors to establish uniform length 1.0 smooth vertex normals [13.2]
-    for (auto& n : normals) {
-        if (glm::length(n) > 0.0f) {
-            n = glm::normalize(n);
-        }
-    }
-}
+//-----------------------------------------------------------------------------------------------------
