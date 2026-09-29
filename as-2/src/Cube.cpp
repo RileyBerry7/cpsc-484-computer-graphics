@@ -3,8 +3,7 @@
 
 #include <cmath>
 
-Cube::Cube(float x, float y, float z, float scale, int colorIndex, int id)
-	: Shape(x, y, z, scale, colorIndex, id), VAO(0), VBO(0), EBO(0) {
+Cube::Cube(float x, float y, float z, float scale, int colorIndex, int id) : Shape(x, y, z, scale, colorIndex, id), VAO(0), VBO(0), EBO(0) {
     shapeType = "Cube";  // Set the type as "Cube"
 
     // Set up OpenGL buffers
@@ -25,7 +24,7 @@ void Cube::setupCube() {
     std::vector<unsigned int> indexData;
 
 
-    // TODO(geometry): the cube: eight corners, six faces, twelve triangles
+    // TODO:(geometry): the cube: eight corners, six faces, twelve triangles
     // Build the shape: fill `vertices`, `faces`, and `normals` (directly or
     // by calling calculateNormals()). See ASSIGNMENTS.md, A2, for the
     // conventions -- roughly one unit across, centred on the origin,
@@ -38,10 +37,18 @@ void Cube::setupCube() {
     // your geometry replace it as you write it. Read src/Torus.cpp first;
     // it is the worked example of a procedural shape.
     vertices = { {-0.5f, -0.5f, 0.0f}, { 0.5f, -0.5f, 0.0f},
-                 { 0.5f,  0.5f, 0.0f}, {-0.5f,  0.5f, 0.0f} };
-    normals  = { {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f},
-                 {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} };
-    faces    = { {0, 1, 2}, {0, 2, 3} };
+                 { 0.5f,  0.5f, 0.0f}, {-0.5f,  0.5f, 0.0f},
+                 {-0.5f, -0.5f, 1.0f}, { 0.5f, -0.5f, 1.0f},
+                 { 0.5f,  0.5f, 1.0f}, {-0.5f,  0.5f, 1.0f} };
+
+    faces    =  { {0, 1, 2}, {0, 2, 3},
+                  {4, 5, 6}, {4, 6, 7},
+                  {0, 1, 5}, {0, 5, 4},
+                  {1, 2, 6}, {1, 6, 5},
+                  {2, 3, 7}, {2, 7, 6},
+                  {3, 0, 4}, {3, 4, 7} };
+
+    calculateNormals(); // Populates normals list
 
     // UVs are per triangle corner, not per vertex: a cube's eight corners each
     // belong to three faces wanting three different UVs. The loop below emits

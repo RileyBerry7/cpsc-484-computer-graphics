@@ -93,6 +93,6 @@ glm::mat4 Shape::getModelMatrix() const {
     T[3][1] = y;
     T[3][2] = z;
 
-    return T * Rz * Ry * Rx * S;
+    return T * Rz * Ry * Rx * S; // Apply matrices 
 }
 

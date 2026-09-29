@@ -20,14 +20,14 @@
 #include <cmath>
 
 void Shape::calculateNormals() {
-    // TODO(geometry): one normal per face, from the cross product of two edges
+    // TODO: (geometry): one normal per face, from the cross product of two edges
     // Fill `normals` with ONE unit normal per entry in `faces`, in the same
     // order, computed from the geometry in `vertices`.
-    //
+    
     // For a triangle with corners a, b, c:
     //     v = (b - a) x (c - a)
     //     n = v / |v|
-    //
+    
     // The cross product is not commutative: swapping the two edges flips the
     // normal. Which one you get depends on the order the corners are listed
     // in -- the winding order -- so a face wound the wrong way lights up from
@@ -44,6 +44,19 @@ void Shape::calculateNormals() {
     // Leaving it as-is gives every face a normal pointing straight up: the
     // scene renders, lit as though every surface were the ground. That is a
     // usable checkpoint, and fixing this one function lights up the Teapot,
-    // the Torus and the Mobius strip all at once.
-    normals.assign(faces.size(), glm::vec3(0.0f, 1.0f, 0.0f));
+    // the Torus and the Mobius strip all at once..
+
+    for (std::vector<int> face : faces) {
+        glm::vec3 a = vertices[face[0]];
+        glm::vec3 b = vertices[face[1]];
+        glm::vec3 c = vertices[face[2]];
+
+        glm::vec3 cross_product = glm::cross((b - a), (c - a));        // AB x AC = normal
+        glm::vec3 normal = cross_product / glm::length(cross_product); // Make unit vector
+        
+        // Hangle degenerate triangles
+        if (glm::length(cross_product) == 0.0) normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    
+        normals.push_back(normal);
+    }
 }
