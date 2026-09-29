@@ -4,6 +4,8 @@
 #include <vector>
 #include <cmath>
 
+const float PI = 3.14159265358979f;
+
 Sphere::Sphere(float x, float y, float z, float scale, int colorIndex, int id)
     : Shape(x, y, z, scale, colorIndex, id), VAO(0), VBO(0), EBO(0) {
     shapeType = "Sphere";  // Set the type as "Sphere"
@@ -25,11 +27,12 @@ void Sphere::setupSphere() {
     // below: the texture-coordinate code further down needs the two segment
     // counts to build its grid, so they have to survive when the geometry is
     // stripped. They are yours to read and use.
-    const unsigned int latitudeSegments = 20; // Number of latitude lines
-    const unsigned int longitudeSegments = 20; // Number of longitude lines
-    const float radius = 0.5f;
+    //
+    const unsigned int latitudeSegments = 20;  // Latitudes  (Phi)
+    const unsigned int longitudeSegments = 20; // Longitudes (Theta)
+    const float P = 0.5f;                      // Radius     (Rho)
 
-    // TODO(geometry): the sphere: spherical coordinates over a latitude/longitude grid
+    // TODO:(geometry): the sphere: spherical coordinates over a laitude/longitude grid
     // Build the shape: fill `vertices`, `faces`, and `normals` (directly or
     // by calling calculateNormals()). See ASSIGNMENTS.md, A2, for the
     // conventions -- roughly one unit across, centred on the origin,
@@ -40,12 +43,24 @@ void Sphere::setupSphere() {
     // deliberately not the shape you were asked for -- it is here so the
     // editor runs, the Insert menu does something visible, and you can see
     // your geometry replace it as you write it. Read src/Torus.cpp first;
-    // it is the worked example of a procedural shape.
-    vertices = { {-0.5f, -0.5f, 0.0f}, { 0.5f, -0.5f, 0.0f},
-                 { 0.5f,  0.5f, 0.0f}, {-0.5f,  0.5f, 0.0f} };
-    normals  = { {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f},
-                 {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} };
+    // it is the worked example of a procedoural shape.
+
+    for (int i = 0; i <= latidueSegments; i++) {
+        float phi = i * PI / latitudeSegments;
+        for (int j = 0; j <= longitudeSegments; j++) {
+            float theta = j * (2 * PI) / longitudeSegments;
+
+            float x = P * sin(phi) * cos(theta);
+            float y = P * sin(phi) * sin(theta);
+            float z = P * cos(phi);
+
+            vertices.push_back(glm::vec3(x, y, z));
+        }
+    }
+
     faces    = { {0, 1, 2}, {0, 2, 3} };
+
+    calculateNormals();
 
     // Prepare OpenGL buffers using the populated attributes
     std::vector<float> vertexData;
