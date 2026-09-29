@@ -12,6 +12,10 @@ float signedPow(float base, float exponent) {
 }
 } // namespace
 
+const int step_count = 100;
+const float shrink_rate = 0.1f;
+const float height_step = 0.1f;
+
 Custom::Custom(float x, float y, float z, float uniformScale, int colorIndex, int id,
                float scaleX, float scaleY, float scaleZ, bool useUniformScaling)
     : Shape(x, y, z, uniformScale, colorIndex, id, scaleX, scaleY, scaleZ, useUniformScaling), VAO(0), VBO(0), EBO(0) {
@@ -28,6 +32,21 @@ Custom::~Custom() {
     glDeleteBuffers(1, &EBO);
 }
 
+//-----------------------------------------------------------------------------------------------------
+// HELPERS
+
+// Helper to push a clean 3-index triangle face
+void addTriangle(int i1, int i2, int i3) {
+    faces.push_back({i1, i2, i3});
+}
+
+// Helper to append a 4-corner quad face as two clean triangles
+void addQuad(int p1, int p2, int p3, int p4) {
+    addTriangle(p1, p2, p3);
+    addTriangle(p3, p4, p1);
+}
+//-----------------------------------------------------------------------------------------------------
+
 void Custom::setupCustom() {
     std::vector<float> vertexData;
     std::vector<unsigned int> indexData;
@@ -40,7 +59,7 @@ void Custom::setupCustom() {
     const int uSteps = 64;
     const int vSteps = 48;
 
-    // TODO(geometry): a shape of your own choosing, at least twelve faces
+    // TODO:(geometry): a shape of your own choosing, at least twelve faces
     // Build the shape: fill `vertices`, `faces`, and `normals` (directly or
     // by calling calculateNormals()). See ASSIGNMENTS.md, A2, for the
     // conventions -- roughly one unit across, centred on the origin,
@@ -53,11 +72,80 @@ void Custom::setupCustom() {
     // What is here is a placeholder square so the editor runs and the Insert
     // menu does something visible. Read src/Torus.cpp first -- it is the
     // worked example of a procedural shape.
-    vertices = { {-0.5f, -0.5f, 0.0f}, { 0.5f, -0.5f, 0.0f},
-                 { 0.5f,  0.5f, 0.0f}, {-0.5f,  0.5f, 0.0f} };
-    normals  = { {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f},
-                 {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} };
-    faces    = { {0, 1, 2}, {0, 2, 3} };
+
+   
+    //----------------------------------------------------------------------------------------------------
+  glm::vec3 c = center;
+    float w = width;
+    float d = depth;
+
+    for (int step = 0; step < step_count; step++) {
+        float hW = w * 0.5f;
+        float hD = d * 0.5f;
+
+        // --- 1. Calculate 4 Bottom-Outer Corners ---
+        glm::vec3 bo1 = c + glm::vec3(-hW, -hD, 0.0f);
+        glm::vec3 bo2 = c + glm::vec3( hW, -hD, 0.0f);
+        glm::vec3 bo3 = c + glm::vec3( hW,  hD, 0.0f);
+        glm::vec3 bo4 = c + glm::vec3(-hW,  hD, 0.0f);
+
+        // --- 2. Extrude Upward ---
+        c.z += height_step;
+
+        // Calculate 4 Top-Outer Corners
+        glm::vec3 to1 = bo1 + glm::vec3(0.0f, 0.0f, height_step);
+        glm::vec3 to2 = bo2 + glm::vec3(0.0f, 0.0f, height_step);
+        glm::vec3 to3 = bo3 + glm::vec3(0.0f, 0.0f, height_step);
+        glm::vec3 to4 = bo4 + glm::vec3(0.0f, 0.0f, height_step);
+
+        // Append Wall Vertices (1-8)
+        int vStart = vertices.size();
+        vertices.insert(vertices.end(), {bo1, bo2, bo3, bo4, to1, to2, to3, to4});
+        
+        // Stitch the 4 Vertical Outer Walls
+        addQuad(vStart + 0, vStart + 1, vStart + 5, vStart + 4); // Front
+        addQuad(vStart + 1, vStart + 2, vStart + 6, vStart + 5); // Right
+        addQuad(vStart + 2, vStart + 3, vStart + 7, vStart + 6); // Back
+        addQuad(vStart + 3, vStart + 0, vStart + 4, vStart + 7); // Left
+
+        // --- 3. Shrink Dimensions ---
+        w -= shrink_rate;
+        d -= shrink_rate;
+
+        // Stop if the crystal collapses to a point
+        if (w <= 0.0f || d <= 0.0f) {
+            addQuad(vStart + 4, vStart + 7, vStart + 6, vStart + 5); // Final cap
+            break;
+        }
+
+        // --- 4. Calculate 4 Shrunk Inner Corners ---
+        float nHW = w * 0.5f;
+        float nHD = d * 0.5f;
+        glm::vec3 ti1 = c + glm::vec3(-nHW, -nHD, 0.0f);
+        glm::vec3 ti2 = c + glm::vec3( nHW, -nHD, 0.0f);
+        glm::vec3 ti3 = c + glm::vec3( nHW,  hD, 0.0f); // Match bounds
+        glm::vec3 ti4 = c + glm::vec3(-nHW,  hD, 0.0f);
+
+        // Append Lip Vertices (9-16)
+        int lipStart = vertices.size();
+        vertices.insert(vertices.end(), {to1, to2, to3, to4, ti1, ti2, ti3, ti4});
+
+        // Stitch the 4 Horizontal Step Lips
+        addQuad(lipStart + 0, lipStart + 1, lipStart + 5, lipStart + 4);
+        addQuad(lipStart + 1, lipStart + 2, lipStart + 6, lipStart + 5);
+        addQuad(lipStart + 2, lipStart + 3, lipStart + 7, lipStart + 6);
+        addQuad(lipStart + 3, lipStart + 0, lipStart + 4, lipStart + 7);
+
+        // --- 5. Branching Rule ---
+        if (step > 0 && step % 5 == 0 && w > 0.6f) {
+            // Recurse outward horizontally along the X-axis
+            GenerateBismuth(c + glm::vec3(hW, 0.0f, 0.0f), w * 0.5f, d * 0.5f, step_count - step, height_step, shrink_rate);
+        }
+    }
+
+
+    //----------------------------------------------------------------------------------------------------
+    
 
     // The shape's own (u, v) grid parameters, the same way the sphere uses
     // its own. flipU for the same handedness reason as Sphere: a generator that
