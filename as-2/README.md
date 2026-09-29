@@ -3,13 +3,13 @@
 
 ---
 
-| **Question**                          | **Response**                     |
-| :---                                  | :---                             |
-| **Student Name**                      | Riley Berry                      |
-| **Compile Instructions**              | "make clean && make && ./editor" |
-| **OS**                                | Linux (Windows 11 - WSL)         |
-| **Collaborators**                     | None                             |
-| **Optional Functionalities**          | None                             |
+| **Question**                          | **Response**                                    |
+| :---                                  | :---                                            |
+| **Student Name**                      | Riley Berry                                     |
+| **Compile/Run Instructions**          | "./editor" or "make clean && make && ./editor"  |
+| **OS**                                | Linux (Windows 11 - WSL)                        |
+| **Collaborators**                     | None                                            |
+| **Optional Functionalities**          | None                                            |
 | **Known Issues**                      | None                             
 
 ---
