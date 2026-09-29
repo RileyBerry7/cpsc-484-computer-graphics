@@ -45,17 +45,25 @@ void Shape::calculateNormals() {
     // scene renders, lit as though every surface were the ground. That is a
     // usable checkpoint, and fixing this one function lights up the Teapot,
     // the Torus and the Mobius strip all at once..
-
+    
     for (std::vector<int> face : faces) {
         glm::vec3 a = vertices[face[0]];
         glm::vec3 b = vertices[face[1]];
         glm::vec3 c = vertices[face[2]];
 
         glm::vec3 cross_product = glm::cross((b - a), (c - a));        // AB x AC = normal
-        glm::vec3 normal = cross_product / glm::length(cross_product); // Make unit vector
+        float length = glm::length(cross_product);
+        glm::vec3 normal;
+
+        if (length > 0.0f) {
+            // Normalize
+            normal = cross_product / length;
+        } else {
+            // Hangle degenerate triangles
+            normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        }
+
         
-        // Hangle degenerate triangles
-        if (glm::length(cross_product) == 0.0) normal = glm::vec3(0.0f, 1.0f, 0.0f);
     
         normals.push_back(normal);
     }

@@ -28,9 +28,9 @@ void Sphere::setupSphere() {
     // counts to build its grid, so they have to survive when the geometry is
     // stripped. They are yours to read and use.
     //
-    const unsigned int latitudeSegments = 20;  // Latitudes  (Phi)
-    const unsigned int longitudeSegments = 20; // Longitudes (Theta)
-    const float P = 0.5f;                      // Radius     (Rho)
+    const int latitudeSegments  = 20; // Latitudes  (Phi)
+    const int longitudeSegments = 20; // Longitudes (Theta)
+    const float P = 0.5f;             // Radius     (Rho)
 
     // TODO:(geometry): the sphere: spherical coordinates over a laitude/longitude grid
     // Build the shape: fill `vertices`, `faces`, and `normals` (directly or
@@ -45,8 +45,10 @@ void Sphere::setupSphere() {
     // your geometry replace it as you write it. Read src/Torus.cpp first;
     // it is the worked example of a procedoural shape.
 
-    for (int i = 0; i <= latidueSegments; i++) {
+    // Calculate vertices
+    for (int i = 0; i <= latitudeSegments; i++) {
         float phi = i * PI / latitudeSegments;
+
         for (int j = 0; j <= longitudeSegments; j++) {
             float theta = j * (2 * PI) / longitudeSegments;
 
@@ -58,9 +60,26 @@ void Sphere::setupSphere() {
         }
     }
 
-    faces    = { {0, 1, 2}, {0, 2, 3} };
+    // Calculate faces
+    const int stride = longitudeSegments + 1;
+    for (int i = 0; i < latitudeSegments; i++) {
+        for (int j = 0; j < longitudeSegments; j++) {
 
-    calculateNormals();
+            const int a = i * stride + j;
+            const int b = i * stride + (j + 1);
+            const int c = (i + 1) * stride + j;
+            const int d = (i + 1) * stride + (j + 1);
+
+            faces.push_back({a, c, b});
+            faces.push_back({b, c, d});
+        }
+    }
+
+    // Calculate normals
+    normals.clear();
+    for (const glm::vec3& vertex : vertices) {
+        normals.push_back(glm::normalize(vertex));
+    }
 
     // Prepare OpenGL buffers using the populated attributes
     std::vector<float> vertexData;
