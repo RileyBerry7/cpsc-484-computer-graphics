@@ -40,7 +40,7 @@
 // orbit -- right-drag. Swing the eye around the target.
 // -----------------------------------------------------------------------------
 void Camera::orbit(float dTheta, float dPhi) {
-    // TODO(camera): add the deltas to theta and phi, clamp the pitch, then updatePosition()
+    // TODO:(camera): add the deltas to theta and phi, clamp the pitch, then updatePosition()
     // The camera's eye point is derived from three numbers held by this
     // class: `theta` (yaw), `phi` (pitch) and `radius` (distance from the
     // target). Orbiting means changing the two angles and then rebuilding
@@ -65,7 +65,7 @@ void Camera::orbit(float dTheta, float dPhi) {
 // pan -- left-drag. Slide the target (and with it the eye) across the screen.
 // -----------------------------------------------------------------------------
 void Camera::pan(float dxScreen, float dyScreen) {
-    // TODO(camera): move the target along the camera's own right and up axes, then updatePosition()
+    // TODO:(camera): move the target along the camera's own right and up axes, then updatePosition()
     // Panning moves what the camera is looking AT. The eye follows for free,
     // because updatePosition() derives it from the target.
     //
@@ -93,7 +93,7 @@ void Camera::pan(float dxScreen, float dyScreen) {
 // zoom -- scroll wheel. Move the eye in and out along the view direction.
 // -----------------------------------------------------------------------------
 void Camera::zoom(float amount) {
-    // TODO(camera): shrink the radius, keep it above a floor, then updatePosition()
+    // TODO:(camera): shrink the radius, keep it above a floor, then updatePosition()
     // This is a dolly, not a zoom: the field of view is untouched and the
     // eye actually moves. Scrolling forward gives a POSITIVE `amount` and
     // should bring the camera CLOSER, so the radius goes down as the amount
@@ -106,5 +106,5 @@ void Camera::zoom(float amount) {
     // is mirrored.
     //
     // Then call updatePosition().
-    (void)amount;
+    setRadius(radius - amount);
 }
