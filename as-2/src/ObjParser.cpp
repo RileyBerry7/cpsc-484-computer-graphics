@@ -79,11 +79,11 @@ bool parseObj(std::istream& in, ObjMesh& out) {
 
     std::cout << "Starting OBJ parse: " << std::endl;
 
+    std::string line;
     (void)in;
     out = ObjMesh();
 
     // 1. Read the input stream one line at a time.
-    std::string line;
     while (std::getline(in, line)) {
 
         // 2. Skip blank lines and comments.
@@ -96,12 +96,24 @@ bool parseObj(std::istream& in, ObjMesh& out) {
         
         // 4. For v records, read x, y, and z and add a vertex.
         if (token == "v") {
+        
+            float x, y, z;
+            iss >> x >> y >> z;
+            out.vertices.push_back(glm::vec3(x, y, z));
 
         // 5. For vn records, read x, y, and z and add a normal.
         } else if (token == "vn") {
             
+            float x, y, z;
+            iss >> x >> y >> z;
+            out.normals.push_back(glm::vec3(x, y, z));
+
         // 6. For vt records, read u and v into a local texture-coordinate table. If 3rd value exists ignore it.
         } else if (token == "vt") {
+
+            float u, v;
+            iss >> u >> v;
+            out.texCoords.push_back(glm::vec3(u, v));
             
         // 7. For f records, collect the face fields and process the first three corners as one triangle.
         } else if (token == "f"){
