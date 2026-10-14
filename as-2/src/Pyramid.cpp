@@ -44,7 +44,6 @@ void Pyramid::setupPyramid() {
         {2, 3, 4,},
         {3, 0, 4} };
 
-
     calculateNormals(); // Populates normals vector
 
     // Build vertex data and index data for OpenGL

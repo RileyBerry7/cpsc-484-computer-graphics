@@ -46,6 +46,8 @@ void Shape::calculateNormals() {
     // usable checkpoint, and fixing this one function lights up the Teapot,
     // the Torus and the Mobius strip all at once..
     
+    normals.clear();
+    
     for (std::vector<int> face : faces) {
         glm::vec3 a = vertices[face[0]];
         glm::vec3 b = vertices[face[1]];
