@@ -59,8 +59,8 @@ void Camera::orbit(float dTheta, float dPhi) {
     // theta is deliberately NOT clamped or wrapped -- yaw is periodic, and
     // cos/sin handle a theta of 400 radians perfectly well.
 
-    theta -= dTheta;
-    phi   -= dPhi;
+    theta -= dTheta; // Apply change in longitude(yaw)
+    phi   -= dPhi;   // Apply change in latitude(pitch)
     phi   = glm::min(phi, glm::half_pi<float>() - 0.001f);  // Clamp phi to 90 degree interval
     phi   = glm::max(phi, -glm::half_pi<float>() + 0.001f); // Add padding to prevent camera jumping
     
@@ -93,6 +93,17 @@ void Camera::pan(float dxScreen, float dyScreen) {
     //     `forward` is the zero vector and normalizing the cross product is
     //     NaN. Bail out early when its length is tiny.
     (void)dxScreen; (void)dyScreen;
+
+    glm::vec3 forward = normalize(target - position);
+    glm::vec3 right   = normalize(cross(forward, up));
+
+    auto dForward = forward * -(dyScreen); 
+    auto dRight   = right  *  -(dxScreen);
+
+    auto target = getTarget();
+    target += dRight + dForward;
+    setTarget(target);
+    updatePosition();
 }
 
 // -----------------------------------------------------------------------------
