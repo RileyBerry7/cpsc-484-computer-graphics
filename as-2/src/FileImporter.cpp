@@ -72,7 +72,9 @@ int FileImporter::importObjFile(ShapeManager& shapeManager) {
         );
 
 	if (!selectedFile) {
+            //std::cerr << "execDir: " << execDir << std::endl;
 	    std::cerr << "File selection cancelled or failed." << std::endl;
+            //std::cerr << "selectedFile: " << selectedFile << std::endl;
 	    return 0;
         }
 
