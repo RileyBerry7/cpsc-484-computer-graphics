@@ -92,17 +92,20 @@ void Camera::pan(float dxScreen, float dyScreen) {
     //   - guard the degenerate case. If the eye ever reaches the target,
     //     `forward` is the zero vector and normalizing the cross product is
     //     NaN. Bail out early when its length is tiny.
-    (void)dxScreen; (void)dyScreen;
 
-    glm::vec3 forward = normalize(target - position);
-    glm::vec3 right   = normalize(cross(forward, up));
+    glm::vec3 worldUp     = normalize(up);                          // Worldspace world up
+    glm::vec3 viewForward = normalize(target - position);           // Worldspace camera forward
+    glm::vec3 viewRight   = normalize(cross(viewForward, worldUp)); // Worldspace camera right
+    // Crossing with worldUp allows our camera to remain horzontally level within the world
 
-    auto dForward = forward * -(dyScreen); 
-    auto dRight   = right  *  -(dxScreen);
+    float panSpeed = 0.5f; // Velocity
 
-    auto target = getTarget();
-    target += dRight + dForward;
-    setTarget(target);
+    auto dH = viewRight * (-dxScreen * panSpeed); // Worldspace delta x
+    auto dV = worldUp   * (dyScreen  * panSpeed); // Worldspace delta y
+
+    target += dH + dV; // Apply deltas
+    setTarget(target); // Set new target
+
     updatePosition();
 }
 
