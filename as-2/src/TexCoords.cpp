@@ -13,12 +13,24 @@
 namespace TexCoords {
 
 std::vector<glm::vec2> sphere(unsigned latSegments, unsigned lonSegments) {
-    // TODO(textures): generate one UV per sphere vertex
+    // TODO: (textures): generate one UV per sphere vertex
     // Walk the same loop bounds Sphere::setupSphere uses, so entry i here
     // matches vertex i there. Remember v runs bottom-up for OpenGL.
-    (void)latSegments; (void)lonSegments;
-    return std::vector<glm::vec2>();
+
+    std::vector<glm::vec2> uvs;
+    uvs.reserve((latSegments + 1) * (lonSegments + 1));
+
+    for (unsigned i = 0; i <= latSegments; i++) {
+        for (unsigned j = 0; j <= lonSegments; j++) {
+            float u = static_cast<float>(j) / lonSegments;
+            float v = 1.0f - static_cast<float>(i) / latSegments;
+
+            uvs.push_back(glm::vec2(u, v));
+        }
+    }
+    return uvs;
 }
+
 
 std::vector<glm::vec2> cube(const std::vector<glm::vec3>& vertices,
                             const std::vector<std::vector<int> >& faces,

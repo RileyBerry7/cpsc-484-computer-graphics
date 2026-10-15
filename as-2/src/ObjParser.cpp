@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
+#include <set>
+#include <ranges>
 
 namespace {
 
@@ -122,57 +124,72 @@ bool parseObj(std::istream& in, ObjMesh& out) {
         // 7. For f records, collect the face fields and process the first three corners as one triangle.
         } else if (token == "f") {
     
-            // Corner Loop
-            std::vector<int> face;
-            for (int i = 0; i < 3; i++) {
+            std::vector<std::string> contents;              // Contents of the line
+            while (iss >> token) contents.push_back(token); // Assemble list
+            if (contents.size() < 3) continue;              // Skip lines with fewer than 3 corners(tokens)
 
-                int vi, ti, ni;
-                std::string cornerString;
-
-                size_t vCount  = out.vertices.size();
-                size_t vtCount = uvs.size();
-                size_t vnCount = out.normals.size();
-
-                iss >> cornerString; // Read corner
+            // Face / Tiangle-Fanning Loop
+            for (size_t i = 2; i < contents.size(); i++) {
                 
-                // 8. Use parseCorner() to resolve vertex, texture, and normal indices, including optional and negative indices
-                parseCorner(cornerString, vCount, vtCount, vnCount, vi, ti, ni);
+                // Collect the 3 corners needed for the current face
+                std::vector<std::string> cornerTriple;
+                cornerTriple.push_back(contents[0]);
+                cornerTriple.push_back(contents[i - 1]);
+                cornerTriple.push_back(contents[i]);
 
-                vi--;
-                ti--;
-                ni--;
+                std::vector<int> face;
+                
+                // Triangle Loop
+                for (std::string& cornerString : cornerTriple) {
+                    
+                    int vi, ti, ni;
 
-                // 9. Reject a face if any required vertex index is invalid.
-                if (vi < 0 || static_cast<size_t>(vi) >= vCount) {
+                    size_t vCount  = out.vertices.size();
+                    size_t vtCount = uvs.size();
+                    size_t vnCount = out.normals.size();
 
-                    std::cerr << "Line " << lineIndex << " - Invalid vi, face discarded: " << line << std::endl;
-                    face.clear();
-                    break; // Early exit implies invalid face
-                }
-                face.push_back(vi); // Push corner-associated vertex index
+                    //iss >> cornerString; // Read corner
+                    
+                    // 8. Use parseCorner() to resolve vertex, texture, and normal indices, including optional and negative indices
+                    parseCorner(cornerString, vCount, vtCount, vnCount, vi, ti, ni);
 
-                // 11. Push one UV per triangle corner when a valid texture index is present, and set hasTexCoords.
-                if (ti >= 0 && static_cast<size_t>(ti) < vtCount) {
-                    out.hasTexCoords = true;
-                    out.texCoords.push_back(uvs[ti]); // Push corner-associated texture index
+                    vi--;
+                    ti--;
+                    ni--;
 
-                // Fallback for invalid ti when one was expected
-                } else if (out.hasTexCoords) {
-                    //face.push_back(ti); // TODO: temporary
-                    std::cerr << "Line " << lineIndex << " - Expected ti: " << line << std::endl;
-                }
+                    // 9. Reject a face if any required vertex index is invalid.
+                    if (vi < 0 || static_cast<size_t>(vi) >= vCount) {
 
-                // 10 If a normal index is invalid fall back to the vi so the project can still handle the mesh
-                if (ni < 0 || static_cast<size_t>(ni) >= vnCount)
-                    ni = vi;
+                        std::cerr << "Line " << lineIndex << " - Invalid vi, face discarded: " << line << std::endl;
+                        face.clear();
+                        break; // Early exit implies invalid face
+                    }
+                    face.push_back(vi); // Push corner-associated vertex index
 
-                face.push_back(ni); // Push corner-associated normal index
+                    // 11. Push one UV per triangle corner when a valid texture index is present, and set hasTexCoords.
+                    if (ti >= 0 && static_cast<size_t>(ti) < vtCount) {
+                        out.hasTexCoords = true;
+                        out.texCoords.push_back(uvs[ti]); // Push corner-associated texture index
 
-            } // END - Corner Loop
+                    // Fallback for invalid ti when one was expected
+                    } else if (out.hasTexCoords) {
+                        //face.push_back(ti); // TODO: temporary
+                        std::cerr << "Line " << lineIndex << " - Expected ti: " << line << std::endl;
+                    }
 
-            // 9.1 Discard face if invalid
-            if (!face.empty())
-                out.faces.push_back(face);
+                    // 10 If a normal index is invalid fall back to the vi so the project can still handle the mesh
+                    if (ni < 0 || static_cast<size_t>(ni) >= vnCount)
+                        ni = vi;
+
+                    face.push_back(ni); // Push corner-associated normal index
+
+                } // END - Triangle Loop
+
+                // 9.1 Discard face if invalid
+                if (!face.empty())
+                    out.faces.push_back(face);
+
+            } // END - Face / Tiangle-Fanning Loop
 
         // Non-compliant lines
         } else {
