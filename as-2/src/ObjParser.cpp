@@ -83,6 +83,7 @@ bool parseObj(std::istream& in, ObjMesh& out) {
     (void)in;
     out = ObjMesh();
     int lineIndex = 0;
+    std::vector<glm::vec2> uvs;
 
     // 1. Read the input stream one line at a time.
     // Line Loop
@@ -116,7 +117,7 @@ bool parseObj(std::istream& in, ObjMesh& out) {
 
             float u, v;
             iss >> u >> v;
-            out.texCoords.push_back(glm::vec2(u, v));
+            uvs.push_back(glm::vec2(u, v));
             
         // 7. For f records, collect the face fields and process the first three corners as one triangle.
         } else if (token == "f") {
@@ -129,7 +130,7 @@ bool parseObj(std::istream& in, ObjMesh& out) {
                 std::string cornerString;
 
                 size_t vCount  = out.vertices.size();
-                size_t vtCount = out.texCoords.size();
+                size_t vtCount = uvs.size();
                 size_t vnCount = out.normals.size();
 
                 iss >> cornerString; // Read corner
@@ -153,7 +154,7 @@ bool parseObj(std::istream& in, ObjMesh& out) {
                 // 11. Push one UV per triangle corner when a valid texture index is present, and set hasTexCoords.
                 if (ti >= 0 && static_cast<size_t>(ti) < vtCount) {
                     out.hasTexCoords = true;
-                    //face.push_back(ti); // Push corner-associated texture index
+                    out.texCoords.push_back(uvs[ti]); // Push corner-associated texture index
 
                 // Fallback for invalid ti when one was expected
                 } else if (out.hasTexCoords) {

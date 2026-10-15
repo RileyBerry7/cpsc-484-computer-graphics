@@ -106,8 +106,7 @@ void Sphere::setupSphere() {
     // Getting this wrong is invisible in a ray-traced render and wrong in the
     // viewport: attribute 3 runs off the end of a too-short buffer after the
     // first ring and every vertex past it reads zero.
-    const std::vector<glm::vec2> vertexUVs =
-        TexCoords::sphere(latitudeSegments, longitudeSegments);
+    const std::vector<glm::vec2> vertexUVs = TexCoords::sphere(latitudeSegments, longitudeSegments);
     texCoords.clear();
     texCoords.reserve(faces.size() * 3);
 
