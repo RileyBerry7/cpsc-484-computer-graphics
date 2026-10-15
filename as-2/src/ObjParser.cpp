@@ -63,10 +63,9 @@ void parseCorner(const std::string& field,
 8. Use parseCorner() to resolve vertex, texture, and normal indices, including optional and negative indices.
 9. Reject a face if any required vertex index is invalid.
 10 If a normal index is missing or invalid, fall back to the vertex index so the rest of the project can still handle the mesh
-consistently.
 11. Push one UV per triangle corner when a valid texture index is present, and set hasTexCoords only if the file actually
 supplied usable UV data.
-12. Ignore records that are outside the required subse
+12. Ignore records that are outside the required subset
 ***************8******************************************************************/
 
 bool parseObj(std::istream& in, ObjMesh& out) {
@@ -116,14 +115,65 @@ bool parseObj(std::istream& in, ObjMesh& out) {
             out.texCoords.push_back(glm::vec3(u, v));
             
         // 7. For f records, collect the face fields and process the first three corners as one triangle.
-        } else if (token == "f"){
+        } else if (token == "f") {
+    
+            // Corner Loop
+            std::vector<vector<int>> face;
+            for (int i = 0; i < 3; ++) {
+``
+                int vi, ti, ni;
+                std::string cornerString;
+                std::vector<int> corner;
 
-        // Non-compliant cases
-        } else {
+                iss >> cornerString; // Read corner
+                
+                // 8. Use parseCorner() to resolve vertex, texture, and normal indices, including optional and negative indices
+                parseCorners(cornerString, out.vertices.size(), out.texCoords.size(), out.normals.size(), vi, ti, ni);
+
+                // 9. Reject a face if any required vertex index is invalid.
+                if (vi < 0 || vi >= out.vertices.size()) {
+                    discardFace = true;
+                    break;
+                }
+                
+                corner.push_back(vi); // Push corner-associated vertex index
+
+                // 11. Push one UV per triangle corner when a valid texture index is present, and set hasTexCoords.
+                if (ti >= 0 || ti < out.texCoords.size()) {
+                    out.hasTexCoords = true;
+                    corner.push_back(ti); // Push corner-associated texture index
+
+                // Fallback for invalid ti when one was expected
+                } else if (out.hasTexCoords) {
+                    corner.push_back(vi) // TODO: temporary
+                    std::cerr << "OBJ marked as hasTexCoords yet invalid texCoord was found." << std::endl; 
+                }
+
+                // 10 If a normal index is invalid fall back to the vi so the project can still handle the mesh
+                if (ni < 0 || ni >= out.normals.size())
+                    ni = vi;
+
+                corner.push_back(ni); // Push corner-associated normal index
             
+                face.push_back(corner); // Map corner to a single shared face
+
+            } // END - Corner Loop
+
+            // 9.1 Discard face if invalid
+            if (face.size() == 3)
+                out.faces.insert(out.faces.end(), face.begin(), face.end());
+
+        // Non-compliant lines
+        } else {
+            // 12. Ignore records that are outside the required subset
+            std::cerr << "Non-compliant line: " << line << std::endl;
         }
-        std::cout << line << '\n';
-    }
+    
+    } // END - Line Loop
 
     return true;
 }
+
+
+
+// 12. Ignore records that are outside the required subse
