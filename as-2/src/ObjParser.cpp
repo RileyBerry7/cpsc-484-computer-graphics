@@ -69,6 +69,7 @@ supplied usable UV data.
 ***************8******************************************************************/
 
 bool parseObj(std::istream& in, ObjMesh& out) {
+
     // TODO: (objparser): parse v, vn, vt and f lines into the ObjMesh
     // Read the stream a line at a time and dispatch on the first token.
     // f corners are "a/b/c" with b and c each optional; indices are
@@ -81,9 +82,12 @@ bool parseObj(std::istream& in, ObjMesh& out) {
     std::string line;
     (void)in;
     out = ObjMesh();
+    int lineIndex = 0;
 
     // 1. Read the input stream one line at a time.
+    // Line Loop
     while (std::getline(in, line)) {
+        lineIndex++;
 
         // 2. Skip blank lines and comments.
         if (line.empty() || line[0] == '#') continue; 
@@ -112,68 +116,80 @@ bool parseObj(std::istream& in, ObjMesh& out) {
 
             float u, v;
             iss >> u >> v;
-            out.texCoords.push_back(glm::vec3(u, v));
+            out.texCoords.push_back(glm::vec2(u, v));
             
         // 7. For f records, collect the face fields and process the first three corners as one triangle.
         } else if (token == "f") {
     
             // Corner Loop
-            std::vector<vector<int>> face;
-            for (int i = 0; i < 3; ++) {
-``
+            std::vector<int> face;
+            for (int i = 0; i < 3; i++) {
+
                 int vi, ti, ni;
                 std::string cornerString;
-                std::vector<int> corner;
+
+                size_t vCount  = out.vertices.size();
+                size_t vtCount = out.texCoords.size();
+                size_t vnCount = out.normals.size();
 
                 iss >> cornerString; // Read corner
                 
                 // 8. Use parseCorner() to resolve vertex, texture, and normal indices, including optional and negative indices
-                parseCorners(cornerString, out.vertices.size(), out.texCoords.size(), out.normals.size(), vi, ti, ni);
+                parseCorner(cornerString, vCount, vtCount, vnCount, vi, ti, ni);
+
+                vi--;
+                ti--;
+                ni--;
 
                 // 9. Reject a face if any required vertex index is invalid.
-                if (vi < 0 || vi >= out.vertices.size()) {
-                    discardFace = true;
-                    break;
+                if (vi < 0 || static_cast<size_t>(vi) >= vCount) {
+
+                    std::cerr << "Line " << lineIndex << " - Invalid vi, face discarded: " << line << std::endl;
+                    face.clear();
+                    break; // Early exit implies invalid face
                 }
-                
-                corner.push_back(vi); // Push corner-associated vertex index
+                face.push_back(vi); // Push corner-associated vertex index
 
                 // 11. Push one UV per triangle corner when a valid texture index is present, and set hasTexCoords.
-                if (ti >= 0 || ti < out.texCoords.size()) {
+                if (ti >= 0 && static_cast<size_t>(ti) < vtCount) {
                     out.hasTexCoords = true;
-                    corner.push_back(ti); // Push corner-associated texture index
+                    //face.push_back(ti); // Push corner-associated texture index
 
                 // Fallback for invalid ti when one was expected
                 } else if (out.hasTexCoords) {
-                    corner.push_back(vi) // TODO: temporary
-                    std::cerr << "OBJ marked as hasTexCoords yet invalid texCoord was found." << std::endl; 
+                    //face.push_back(ti); // TODO: temporary
+                    std::cerr << "Line " << lineIndex << " - Expected ti: " << line << std::endl;
                 }
 
                 // 10 If a normal index is invalid fall back to the vi so the project can still handle the mesh
-                if (ni < 0 || ni >= out.normals.size())
+                if (ni < 0 || static_cast<size_t>(ni) >= vnCount)
                     ni = vi;
 
-                corner.push_back(ni); // Push corner-associated normal index
-            
-                face.push_back(corner); // Map corner to a single shared face
+                face.push_back(ni); // Push corner-associated normal index
 
             } // END - Corner Loop
 
             // 9.1 Discard face if invalid
-            if (face.size() == 3)
-                out.faces.insert(out.faces.end(), face.begin(), face.end());
+            if (!face.empty())
+                out.faces.push_back(face);
 
         // Non-compliant lines
         } else {
             // 12. Ignore records that are outside the required subset
-            std::cerr << "Non-compliant line: " << line << std::endl;
+            std::cerr << "Line " << lineIndex << " - Unrecognized: " << line << std::endl;
         }
     
     } // END - Line Loop
 
+    std::cerr << "Parse Completed. " << std::endl;
+    std::cerr << "Parse Stats: " << std::endl;
+    std::cerr << "Vertices: " << out.vertices.size() << std::endl;
+    std::cerr << "Normals: " << out.normals.size() << std::endl;
+    std::cerr << "TexCoords: " << out.texCoords.size() << std::endl;
+    std::cerr << "Faces: " << out.faces.size() << std::endl;
+
+    if (out.faces.empty())
+        return false;
     return true;
 }
-
-
-
-// 12. Ignore records that are outside the required subse
+//______________________________________________________________________________________________
