@@ -1,0 +1,2 @@
+as-3-riley-berry.zip filter=lfs diff=lfs merge=lfs -text
+editor/data/obj/ISD.obj filter=lfs diff=lfs merge=lfs -text
