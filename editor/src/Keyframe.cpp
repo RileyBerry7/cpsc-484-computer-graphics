@@ -100,7 +100,11 @@ void AnimationTrack::addKey(const Keyframe& k) {
     // Add in order sorted by time
     for (auto it = keys.begin(); it != keys.end(); it++) {
         if (k.time <= it->time) {
-            keys.insert(it, k);
+            
+            if (k.time == it->time)
+                *it = k; // Replace if time already exists
+            else 
+                keys.insert(it, k);  // Insert if time is new
             return;
         }
     }
