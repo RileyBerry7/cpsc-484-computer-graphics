@@ -83,7 +83,7 @@ float applyEasing(int easing, float u) {
 // --- storage: keeping the keys sorted and unique in time --------------------
 
 void AnimationTrack::addKey(const Keyframe& k) {
-    // TODO(animation): insert keeping keys sorted, replacing any key at the same time
+    // TODO: (animation): insert keeping keys sorted, replacing any key at the same time
     // Insert k so that `keys` stays sorted by time, and so that no two keys
     // ever share an instant: a key at a time that already has one REPLACES
     // it rather than joining it.
@@ -96,6 +96,14 @@ void AnimationTrack::addKey(const Keyframe& k) {
     // looks entirely alive -- keys land, tracks appear, diamonds drag -- and
     // it misbehaves the moment you key out of order or key the same instant
     // twice. Both are visible, and both are yours to fix.
+    
+    // Add in order sorted by time
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        if (k.time <= *it.time) {
+            keys.insert(it, k);
+            return;
+        }
+    }
     keys.push_back(k);
 }
 
