@@ -108,7 +108,7 @@ void AnimationTrack::addKey(const Keyframe& k) {
 }
 
 bool AnimationTrack::removeKeyNear(float t, float eps) {
-    // TODO(animation): erase the key NEAREST t, if one is within eps
+    // TODO: (animation): erase the key NEAREST t, if one is within eps
     // Erase the key NEAREST t, provided it is within eps, and say whether
     // one went. Nearest, not first: the playhead rarely lands exactly on a
     // key, and Delete key passes a generous eps of 0.05 s precisely so it
@@ -116,13 +116,21 @@ bool AnimationTrack::removeKeyNear(float t, float eps) {
     //
     // As it stands this takes the first key within eps instead, which is the
     // wrong one whenever two keys sit close together.
-    for (size_t i = 0; i < keys.size(); ++i) {
-        if (std::fabs(keys[i].time - t) <= eps) {
-            keys.erase(keys.begin() + static_cast<long>(i));
-            return true;
+
+    // Find closes key
+    auto  closest    = keys.end();
+    float difference = INFINITY;
+
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        if (std::abs(it->time - t) < difference) {
+            closest = it;
+            difference = abs(it->time - t);
         }
     }
-    return false;
+    if (closest.end || difference >= eps) return false;
+
+    keys.erase(closest);
+    return true;
 }
 
 int AnimationTrack::moveKey(size_t index, float t, float eps) {
