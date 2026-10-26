@@ -1,0 +1,23 @@
+# Object files
+*.o
+*.obj
+
+# Image files
+*.png
+*.jpg
+
+# Windows Executables
+*.exe
+
+# Linux Executables (compiled binaries without extensions)
+# Note: This ignores files inside a 'bin/' directory or you can name specific files
+# To ignore all files without an extension in the root directory:
+# *
+# !*/
+# !*.*
+
+*.zip
+
+# Build directory
+build/
+
