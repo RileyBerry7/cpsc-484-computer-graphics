@@ -99,7 +99,7 @@ void AnimationTrack::addKey(const Keyframe& k) {
     
     // Add in order sorted by time
     for (auto it = keys.begin(); it != keys.end(); it++) {
-        if (k.time <= *it.time) {
+        if (k.time <= it->time) {
             keys.insert(it, k);
             return;
         }
@@ -127,7 +127,7 @@ bool AnimationTrack::removeKeyNear(float t, float eps) {
             difference = abs(it->time - t);
         }
     }
-    if (closest.end || difference >= eps) return false;
+    if (closest == keys.end() || difference >= eps) return false;
 
     keys.erase(closest);
     return true;
