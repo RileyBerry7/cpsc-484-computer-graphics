@@ -33,6 +33,7 @@ const char* const kEasingNames[EASE_COUNT] = {
 
 // Linear interpolation with u clamped, so a caller that computes u from an
 // out-of-range t cannot extrapolate a pose that was never keyed.
+
 glm::vec3 lerpVec3(const glm::vec3& a, const glm::vec3& b, float u) {
     // TODO:(animation): linear interpolation, with u clamped to [0, 1]
     return u * b + (1.0f - u) * a;
@@ -89,11 +90,11 @@ float applyEasing(int easing, float u) {
     // works, the scene file remembers your choice, and nothing looks any
     // different. That is the checkpoint -- the motion is correct, just
     // mechanical.
+    
+    //u = std::max(0.0f, std::min(1.0f, u)); // Clamp u to [0, 1]
 
     switch (easing) 
     {
-        u = max(0.0f, min(1.0f, u)); // Clamp u to [0, 1]
-
         case EASE_LINEAR: return u;
         case EASE_IN:     return u * u;
         case EASE_OUT:    return 1 - (1 - u) * (1 - u);
@@ -186,32 +187,29 @@ int AnimationTrack::moveKey(size_t index, float t, float eps) {
     if (index >= keys.size()) return -1; // Key DNE
     if (t < 0.0f) t = 0.0f;              // Time must be positive
     
-    keys[index].time = t;                // Reassign time
 
-    float old_time = keys[index].time;
-    addKey(keys[index]);
-    removeKeyNear(old_time, 0.5f);
-    return 0;
+    // NAIVE IMPLEMENTATION
+    //keys[index].time = t;                // Reassign time
+    //float old_time = keys[index].time;
+    //addKey(keys[index]);
+    //removeKeyNear(old_time, 0.5f);
+    //return 0;
+    
+    // BETTER IMPLEMENTATION
+    Keyframe key = keys[index];
+    keys.erase(keys.begin() + index);
+    key.time = std::max(0.0f, t);
 
-    auto curr = keys.begin() + index;
-    int  dir  = t > curr->time ? 1 : -1;
-
-    // Reassign position
-    while (true) {
-        auto next = curr + dir;
-
-        // Bounds check
-        if (next == keys.end() || (dir == -1 && curr == keys.begin())) break; // Swapping cannot continue
-        
-        // Swap current with its neighbor until its in the correct position
-        if (std::abs(next->time - t) < std::abs(curr->time - t)) {
-            curr->time = next->time; 
-            std::swap(*curr, *next);
-            index += dir;
-        }
-        curr  += dir;
+    for (size_t i = 0; i < keys.size();) {
+        if (std::abs(keys[i].time - key.time) <= eps)
+            keys.erase(keys.begin() + i);
+        else
+            ++i;
     }
-    return static_cast<int>(index); // Return new index
+    auto pos = std::lower_bound(keys.begin(), keys.end(), key.time, [](const Keyframe& k, float time) { return k.time < time; });
+    int newIndex = static_cast<int>(pos - keys.begin());
+    keys.insert(pos, key);
+    return newIndex;
 }
 
 bool AnimationTrack::evaluate(float t, Keyframe& out) const {
@@ -255,8 +253,8 @@ bool AnimationTrack::evaluate(float t, Keyframe& out) const {
         auto a = b - 1;
 
         // Apply Easing
-        float u = (t - a->time) / (b->time - a->time);
-        applyEasing(a->easing, u);
+        float u = (t - a->time) / (b->time - a->time); // No duplicate times -> div by 0 is impossible
+        u = applyEasing(a->easing, u);
         
         // Linear interpolation
         out.time     = t;
