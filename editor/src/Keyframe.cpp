@@ -138,7 +138,7 @@ bool AnimationTrack::removeKeyNear(float t, float eps) {
 }
 
 int AnimationTrack::moveKey(size_t index, float t, float eps) {
-    // TODO(animation): retime the key, keep the list sorted, return where it ended up
+    // TODO: (animation): retime the key, keep the list sorted, return where it ended up
     // Retime the key at `index` to time t, keep `keys` sorted, and RETURN
     // THE INDEX IT ENDED UP AT. Return -1 if `index` was out of range.
     // Clamp t at 0; there is no negative time.
@@ -159,11 +159,36 @@ int AnimationTrack::moveKey(size_t index, float t, float eps) {
     //
     // As it stands this retimes in place and returns the index it was given.
     // Dragging works perfectly until a key crosses one of its neighbours.
-    if (index >= keys.size()) return -1;
-    if (t < 0.0f) t = 0.0f;
-    keys[index].time = t;
-    (void)eps;
-    return static_cast<int>(index);
+
+    if (index >= keys.size()) return -1; // Key DNE
+    if (t < 0.0f) t = 0.0f;              // Time must be positive
+    
+    keys[index].time = t;                // Reassign time
+
+    float old_time = keys[index].time;
+    addKey(keys[index]);
+    removeKeyNear(old_time, 0.5f);
+    return 0;
+
+    auto curr = keys.begin() + index;
+    int  dir  = t > curr->time ? 1 : -1;
+
+    // Reassign position
+    while (true) {
+        auto next = curr + dir;
+
+        // Bounds check
+        if (next == keys.end() || (dir == -1 && curr == keys.begin())) break; // Swapping cannot continue
+        
+        // Swap current with its neighbor until its in the correct position
+        if (std::abs(next->time - t) < std::abs(curr->time - t)) {
+            curr->time = next->time; 
+            std::swap(*curr, *next);
+            index += dir;
+        }
+        curr  += dir;
+    }
+    return static_cast<int>(index); // Return new index
 }
 
 bool AnimationTrack::evaluate(float t, Keyframe& out) const {
