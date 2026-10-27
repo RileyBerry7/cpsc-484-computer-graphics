@@ -34,9 +34,8 @@ const char* const kEasingNames[EASE_COUNT] = {
 // Linear interpolation with u clamped, so a caller that computes u from an
 // out-of-range t cannot extrapolate a pose that was never keyed.
 glm::vec3 lerpVec3(const glm::vec3& a, const glm::vec3& b, float u) {
-    // TODO(animation): linear interpolation, with u clamped to [0, 1]
-    (void)u;
-    return a + (b - a) * 0.0f;
+    // TODO:(animation): linear interpolation, with u clamped to [0, 1]
+    return u * b + (1.0f - u) * a;
 }
 
 // Interpolate Euler angles the short way round.
@@ -46,7 +45,7 @@ glm::vec3 lerpVec3(const glm::vec3& a, const glm::vec3& b, float u) {
 // rotation a viewer expects to see. Without this an object spins almost all
 // the way round the wrong way whenever a track crosses the 0/360 seam.
 glm::vec3 lerpEulerDegrees(const glm::vec3& a, const glm::vec3& b, float u) {
-    // TODO(animation): interpolate Euler angles the SHORT way round
+    // TODO:(animation): interpolate Euler angles the SHORT way round
     // Per axis: wrap the difference b - a into (-180, 180] before applying
     // it, or a track crossing 350 -> 10 degrees spins backwards through
     // the whole circle instead of forwards through 20.
@@ -61,7 +60,7 @@ float applyEasing(int easing, float u) {
     if (u <= 0.0f) return 0.0f;
     if (u >= 1.0f) return 1.0f;
 
-    // TODO(animation): remap u through the easing curve
+    // TODO: (animation): remap u through the easing curve
     // Return u remapped by the curve `easing` names. The enum is in
     // Keyframe.h; every curve must satisfy f(0) = 0 and f(1) = 1, or a key
     // stops holding its own pose at its own time.
@@ -192,13 +191,54 @@ int AnimationTrack::moveKey(size_t index, float t, float eps) {
 }
 
 bool AnimationTrack::evaluate(float t, Keyframe& out) const {
-    // TODO(animation): return the interpolated pose at time t
+    // TODO: (animation): return the interpolated pose at time t
     // Handle, in order: no keys (return false); exactly one key; looping
     // (wrap t into [startTime, endTime]); t at or outside either end
     // (clamp, never extrapolate); otherwise find the bracketing pair,
     // compute u across the interval, remap it through
     // applyEasing(k[i].easing, u), and interpolate. See the full contract
     // in include/Keyframe.h.
-    (void)t;
-    return false;
+    
+    // No Keys
+    if (keys.empty()) {
+        return false;
+
+    // One Key
+    } else if (keys.size() == 1) {
+        out = keys[0]; 
+        out.time = t;
+        return true;
+
+    // Greater than one key
+    } else {
+        // Bounds checking
+        if (loop) t = std::fmod(t, duration());
+        else if (t < startTime()) {
+            out = keys[0];
+            return true;
+        } else if (t > endTime()) {
+            out = keys[-1];
+            return true;
+        }
+       
+        // Find consecuteve keys that enclose t
+        auto b = keys.begin();
+        while (b->time < t) b++;
+        if (b == keys.begin()) {
+            out = *b;
+            return true;
+        }
+        auto a = b - 1;
+
+        // Apply Easing
+        float u = (t - a->time) / (b->time - a->time);
+        applyEasing(a->easing, u);
+        
+        // Linear interpolation
+        out.time     = t;
+        out.position = lerpVec3(a->position, b->position, u);
+        out.rotation = lerpEulerDegrees(a->rotation, b->rotation, u);
+        out.scale    = lerpVec3(a->scale, b->scale, u);
+        return true;
+    }
 }
