@@ -36,6 +36,7 @@ const char* const kEasingNames[EASE_COUNT] = {
 glm::vec3 lerpVec3(const glm::vec3& a, const glm::vec3& b, float u) {
     // TODO:(animation): linear interpolation, with u clamped to [0, 1]
     return u * b + (1.0f - u) * a;
+    // a + u(b - a)
 }
 
 // Interpolate Euler angles the short way round.
@@ -44,17 +45,30 @@ glm::vec3 lerpVec3(const glm::vec3& a, const glm::vec3& b, float u) {
 // from 350 to 10 degrees, b - a is -340; adding 360 gives +20, which is the
 // rotation a viewer expects to see. Without this an object spins almost all
 // the way round the wrong way whenever a track crosses the 0/360 seam.
+
 glm::vec3 lerpEulerDegrees(const glm::vec3& a, const glm::vec3& b, float u) {
     // TODO:(animation): interpolate Euler angles the SHORT way round
     // Per axis: wrap the difference b - a into (-180, 180] before applying
     // it, or a track crossing 350 -> 10 degrees spins backwards through
     // the whole circle instead of forwards through 20.
-    (void)b; (void)u;
-    return a;
+
+    glm::vec3 res = b - a;
+
+    res.x = std::fmod(res.x + 180.0f, 360.0f) - 180.0f;
+    res.y = std::fmod(res.y + 180.0f, 360.0f) - 180.0f;
+    res.z = std::fmod(res.z + 180.0f, 360.0f) - 180.0f;
+
+    if (res.x < 0.0f) res.x += 360.0f;
+    if (res.y < 0.0f) res.y += 360.0f;
+    if (res.z < 0.0f) res.z += 360.0f;
+
+    //res = glm::mod(res + 180.0f, 360.0f) - 180.0f;
+
+    return a + u * res;
 }
 
 // Remap u through an easing curve. See Keyframe.h for the contract; the one
-// rule that matters is f(0) = 0 and f(1) = 1, so a key still holds its own pose
+// rule that matters is f(0) = 0  f(1) = 1, so a key still holds its own pose
 // at its own time.
 float applyEasing(int easing, float u) {
     if (u <= 0.0f) return 0.0f;
