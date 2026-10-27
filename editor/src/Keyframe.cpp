@@ -92,11 +92,13 @@ float applyEasing(int easing, float u) {
 
     switch (easing) 
     {
+        u = max(0.0f, min(1.0f, u)); // Clamp u to [0, 1]
+
         case EASE_LINEAR: return u;
         case EASE_IN:     return u * u;
         case EASE_OUT:    return 1 - (1 - u) * (1 - u);
         case EASE_IN_OUT: return (3 * u * u) - (2 * u * u * u);
-        case EASE_STEP:   return 0;
+        case EASE_STEP:   return (u < 1) ? 0 : 1;
         default:           return u;
     }
 }
