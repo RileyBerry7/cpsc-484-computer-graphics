@@ -1,0 +1,140 @@
+editor-scene 1
+# Editor scene file. Plain text on purpose - safe to read and diff.
+
+[scene]
+shapeCounter=6
+
+[camera]
+position=-15.029402 1.5184664 0.2760744
+target=-0.15702882 0.24500008 1.7562237
+radius=15
+orbit=3.2407894 0.08500007
+
+[render]
+mode=1
+background=0.1 0.1 0.1
+width=640
+height=480
+maxDepth=4
+samplesPerPixel=1
+shadows=1
+reflections=1
+refractions=1
+transparentShadows=1
+shadowBias=0.001
+
+[timeline]
+length=5.0000005
+loop=1
+
+[track]
+shape=2
+loop=0
+key=0 0 0 -3.2 0 0 0 0.001 0.001 0.001 1
+key=0.5666667 4.62428e-44 1.1 3.15 336 0 0 0.001 0.001 0.001 1
+key=0.90000004 4.62428e-44 2.7 1.9 243 0 4.2521e-41 0.001 0.001 0.001 4
+key=1.3333334 4.62428e-44 2.746 0.042 198.136 0 0 0.001 0.001 0.001 1
+key=1.6333334 4.62428e-44 1.659 -0.333 105.52 0 0.06430873 0.001 0.001 0.001 4
+key=1.8000001 4.62428e-44 1.003 0.533 41.578 0 0.23881213 0.001 0.001 0.001 1
+key=2.3000002 4.62428e-44 1.2586696 3.4235172 26.251 0 0.5113631 0.001 0.001 0.001 1
+key=2.4333334 4.62428e-44 1.2441895 4.1474037 24.31148 0 22.922716 0.001 0.001 0.001 1
+key=3.1666667 4.62428e-44 1.2396861 7.773 23.70827 0 189.893 0.001 0.001 0.001 1
+key=3.3666668 4.62428e-44 1.2409359 8.467 23.875668 0 236.557 0.001 0.001 0.001 1
+key=3.546512 4.62428e-44 1.0938214 8.948658 29.735668 0 270.5796 0.001 0.001 0.001 1
+key=3.7333336 4.62428e-44 0.941 9.449 35.823 0 305.922 0.001 0.001 0.001 1
+
+[track]
+shape=5
+loop=0
+key=0.90000004 10 1 0 0 270 0 0.01 0.01 0.01 1
+key=2.5666668 5 1 0 0 270 0 0.01 0.01 0.01 1
+key=4.566667 0 1 0 0 270 0 0.01 0.01 0.01 1
+key=4.8 -20 -1.3 0 0 270 0 0.2 0.2 0.2 1
+
+[track]
+shape=6
+loop=0
+key=0 -9.8 -0.2 -1.9 270 353 0 2 2 2 1
+key=1.2666668 -9.8 -0.2 -1.9 270 90 0 2 2 2 1
+key=2.966667 -9.8 -0.2 -1.9 270 180 0 2 2 2 1
+key=4.266667 -9.8 -0.2 -1.9 270 270 0 2 2 2 1
+key=4.7333336 -9.8 -0.2 -1.9 270 0 0 2 2 2 1
+
+[shape]
+type=Light
+id=1
+name=Light
+position=-10 10 10
+rotation=0 0 0
+uniformScaling=1
+scale=1
+scaleXYZ=1 1 1
+colorIndex=30
+customColor=0 0 0
+material=1 1 1 32 0 0 1.5
+lightType=0
+enabled=1
+lightColor=1 1 1
+intensity=1.12
+scales=0.15 1 0.8
+direction=0 -1 0
+attenuation=1 0 0
+
+[shape]
+type=ImportShape
+id=2
+name=Ww1-plane
+position=4.62428e-44 1.2437166 4.5281863
+rotation=24.248127 0 40.45897
+uniformScaling=0
+scale=0.001
+scaleXYZ=0.001 0.001 0.001
+colorIndex=31
+customColor=1 1 1
+material=1 1 1 32 0 0 1.5
+texture=/home/riley-linux/git_repos/cpsc-484-computer-graphics/editor/data/textures/2k_mars.jpg
+source=/home/riley-linux/git_repos/cpsc-484-computer-graphics/editor/data/obj/ww1-plane.obj
+
+[shape]
+type=Sphere
+id=3
+name=Sphere
+position=0 0 0
+rotation=270 0 0
+uniformScaling=1
+scale=100
+scaleXYZ=1 1 1
+colorIndex=31
+customColor=1 1 1
+material=1 1 0 32 0 0 1.5
+texture=/home/riley-linux/git_repos/cpsc-484-computer-graphics/editor/data/textures/sunflowers_puresky_4k.jpg
+
+[shape]
+type=ImportShape
+id=5
+name=Skull
+position=5.1689425 1 0
+rotation=0 270 0
+uniformScaling=1
+scale=0.01
+scaleXYZ=1 1 1
+colorIndex=31
+customColor=1 1 1
+material=0.725 1 0.38 27.5 0 0 1.5
+texture=/home/riley-linux/git_repos/cpsc-484-computer-graphics/editor/data/textures/2k_ceres_fictional.jpg
+source=/home/riley-linux/git_repos/cpsc-484-computer-graphics/editor/data/obj/skull.obj
+
+[shape]
+type=Sphere
+id=6
+name=Sphere
+position=-9.8 -0.20000002 -1.9
+rotation=270 155.8422 0
+uniformScaling=1
+scale=2
+scaleXYZ=1 1 1
+colorIndex=31
+customColor=1 1 1
+material=1 1 0 32 0 0 1.5
+texture=/home/riley-linux/git_repos/cpsc-484-computer-graphics/editor/data/textures/2k_earth_daymap.jpg
+
