@@ -59,10 +59,6 @@ glm::vec3 lerpEulerDegrees(const glm::vec3& a, const glm::vec3& b, float u) {
     res.y = std::fmod(res.y + 180.0f, 360.0f) - 180.0f;
     res.z = std::fmod(res.z + 180.0f, 360.0f) - 180.0f;
 
-    if (res.x < 0.0f) res.x += 360.0f;
-    if (res.y < 0.0f) res.y += 360.0f;
-    if (res.z < 0.0f) res.z += 360.0f;
-
     //res = glm::mod(res + 180.0f, 360.0f) - 180.0f;
 
     return a + u * res;
