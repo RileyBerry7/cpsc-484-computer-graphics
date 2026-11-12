@@ -45,14 +45,14 @@ std::vector<glm::vec2> cube(const std::vector<glm::vec3>& vertices,
 
     // Face Loop
     for (size_t i = 0; i < faces.size(); ++i) {
-        glm::vec3 normal = faceNormals[i / 2];
+        glm::vec3 normal = faceNormals[i];
 
         // Corner Loop
         for (size_t j = 0; j < faces[i].size(); ++j) {
             glm::vec3 v = vertices[faces[i][j]];
             glm::vec2 uv(0.0f);
 
-            // Project vertex onto the not-normal axes
+            // Project vertex onto the two axes the normal is NOT aligned with
             if (std::abs(normal.x) > 0.5f) {
                 // Normal is along X -> project onto Y and Z
                 uv = glm::vec2(v.y, v.z);
@@ -64,15 +64,15 @@ std::vector<glm::vec2> cube(const std::vector<glm::vec3>& vertices,
                 uv = glm::vec2(v.x, v.y);
             }
 
-            // Shift from [-0.5, 0.5] to [0.0, 1.0] because our cube is unit-centered at origin
+            // Shift from [-0.5, 0.5] to [0.0, 1.0]
             uv += glm::vec2(0.5f);
 
             uvs.push_back(uv);
         }
     }
-
     return uvs;
 }
+
 
 // Cylindrical projection, one UV per triangle corner.
 //

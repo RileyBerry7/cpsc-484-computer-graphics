@@ -69,7 +69,6 @@ void Cube::setupCube() {
     };
 
     calculateNormals(); // Populates normals list
-    //normals = { {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f} };
 
     // UVs are per triangle corner, not per vertex: a cube's eight corners each
     // belong to three faces wanting three different UVs. The loop below emits
