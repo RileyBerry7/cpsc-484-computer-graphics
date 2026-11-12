@@ -101,9 +101,40 @@ std::vector<glm::vec2> cylindricalPerCorner(const std::vector<glm::vec3>& vertic
     // That repair is only expressible per corner, which is why this returns
     // per-corner UVs: one point in space needs two different u values
     // depending on which triangle is asking.
-    (void)vertices; (void)faces;
-    return std::vector<glm::vec2>();
+
+    if (vertices.empty() || faces.empty()) return {};
+
+    // Compute Y bounds for vertical normalization
+    auto [minIt, maxIt] = std::minmax_element(vertices.begin(), vertices.end(),
+        [](const glm::vec3& a, const glm::vec3& b) { return a.y < b.y; });
+    float minY = minIt->y;
+    float spanY = std::max(maxIt->y - minY, 1e-6f);
+
+    constexpr float PI = 3.14159265358979323846f;
+    std::vector<glm::vec2> uvs;
+    uvs.reserve(faces.size() * 3);
+
+    for (const auto& face : faces) {
+        size_t start = uvs.size();
+        float minU = 1.0f, maxU = 0.0f;
+
+        for (int idx : face) {
+            const glm::vec3& p = vertices[idx];
+            float u = (std::atan2(p.z, p.x) + PI) / (2.0f * PI);
+            minU = std::min(minU, u);
+            maxU = std::max(maxU, u);
+            uvs.emplace_back(u, (p.y - minY) / spanY);
+        }
+
+        // Repair wrap seam if triangle spans more than half a turn
+        if (maxU - minU > 0.5f) {
+            for (size_t k = start; k < uvs.size(); ++k)
+                if (uvs[k].x < 0.5f) uvs[k].x += 1.0f;
+        }
+    }
+    return uvs;
 }
+
 
 } // namespace TexCoords
 
