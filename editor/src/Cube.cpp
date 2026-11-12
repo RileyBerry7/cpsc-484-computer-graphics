@@ -39,19 +39,20 @@ void Cube::setupCube() {
     
     float half = 1.0f / 2.0f; // Half side length  
 
-    glm::vec3 bTopLeft     = { -half, -half, half };
-    glm::vec3 bTopRight    = { half, -half, half };
-    glm::vec3 bBottomRight = { half, half, half };
-    glm::vec3 bBottomLeft  = { -half, half, half };
+    glm::vec3 fTopLeft     = { -half, -half, half };
+    glm::vec3 fTopRight    = { half, -half, half };
+    glm::vec3 fBottomRight = { half, half, half };
+    glm::vec3 fBottomLeft  = { -half, half, half };
 
-    glm::vec3 fTopLeft     = { -half, -half, -half };
-    glm::vec3 fTopRight    = { half, -half, -half };
-    glm::vec3 fBottomRight = { half, half, -half };
-    glm::vec3 fBottomLeft  = { -half, half, -half };
+    glm::vec3 bTopLeft     = { -half, -half, -half };
+    glm::vec3 bTopRight    = { half, -half, -half };
+    glm::vec3 bBottomRight = { half, half, -half };
+    glm::vec3 bBottomLeft  = { -half, half, -half };
 
-    vertices = { bTopLeft, bTopRight, bBottomRight, bBottomLeft,
-                 fTopLeft, fTopRight, fBottomRight, fBottomLeft };
+    vertices = { fTopLeft, fTopRight, fBottomRight, fBottomLeft,
+                 bTopLeft, bTopRight, bBottomRight, bBottomLeft };
 
+    // OLD
     //vertices = { {-0.5f, -0.5f, 0.0f}, { 0.5f, -0.5f, 0.0f},
     //             { 0.5f,  0.5f, 0.0f}, {-0.5f,  0.5f, 0.0f},
     //             {-0.5f, -0.5f, 1.0f}, { 0.5f, -0.5f, 1.0f},

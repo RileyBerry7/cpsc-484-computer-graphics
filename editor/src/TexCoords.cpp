@@ -35,12 +35,20 @@ std::vector<glm::vec2> sphere(unsigned latSegments, unsigned lonSegments) {
 std::vector<glm::vec2> cube(const std::vector<glm::vec3>& vertices,
                             const std::vector<std::vector<int> >& faces,
                             const std::vector<glm::vec3>& faceNormals) {
-    // TODO(textures): generate one UV per cube triangle corner
+    //TODO: (textures): generate one UV per cube triangle corner
     // Three per face, in the order the corners appear in `faces`. Project
     // each vertex onto the two axes the face normal is NOT aligned with.
     // faceNormals is indexed faceNormals[i / 2]: two triangles per face.
     (void)vertices; (void)faces; (void)faceNormals;
     return std::vector<glm::vec2>();
+
+    // Face Loop
+    
+        // Corner Loop
+
+        // Generate UV
+        
+        // Project vertex onto the not-normal axes
 }
 
 // Cylindrical projection, one UV per triangle corner.
@@ -53,7 +61,7 @@ std::vector<glm::vec2> cube(const std::vector<glm::vec3>& vertices,
 // own bounds.
 std::vector<glm::vec2> cylindricalPerCorner(const std::vector<glm::vec3>& vertices,
                                             const std::vector<std::vector<int> >& faces) {
-    // TODO(textures): cylindrical projection with the wrap seam repaired
+    // TODO: (textures): cylindrical projection with the wrap seam repaired
     // Project every triangle corner onto a cylinder about the Y axis: u is
     // the angle round it (atan2(z, x), remapped from -pi..pi into 0..1), v is
     // the height normalised by the mesh's own Y bounds. Return three UVs per
@@ -77,10 +85,24 @@ std::vector<glm::vec2> cylindricalPerCorner(const std::vector<glm::vec3>& vertic
 } // namespace TexCoords
 
 glm::vec3 Texture::sample(float u, float v) const {
-    // TODO(textures): bilinear sample in normalised coordinates, wrapping outside [0, 1]
+    //TODO: (textures): bilinear sample in normalised coordinates, wrapping outside [0, 1]
     // Wrap u and v into [0, 1), find the four surrounding texels, and
     // blend them. Texel CENTRES sit at (i + 0.5) / size, which is why the
     // -0.5 below matters: without it the image is offset by half a texel.
     (void)u; (void)v;
     return glm::vec3(1.0f);
+
+    // Wrap coordinates into [0,1]
+    if (u < 0) u = -u;
+    if (v < 0) v = -v;
+
+    if (u > 1) u = 1;
+    if (v > 1) v = 1;
+    
+    // Shift into texel-center space
+
+    // Find four surrounding texels + their blend weights
+
+    // Linear interpolate to blend final color
+
 }
