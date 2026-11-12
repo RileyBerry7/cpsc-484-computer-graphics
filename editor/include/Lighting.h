@@ -5,6 +5,7 @@
 
 #include "Material.h"
 #include "RayScene.h"     // SceneLightSample
+#include <cmath>
 
 // =============================================================================
 // The local illumination model

@@ -13,7 +13,7 @@
 LightGeometry lightGeometry(const SceneLightSample& light, const glm::vec3& point) {
     LightGeometry g;
 
-    // TODO(lighting): light direction, distance and distance falloff
+    // TODO: (lighting): light direction, distance and distance falloff
     // Fill in `g` for this light as seen from `point`.
     //
     // Two cases. A DIRECTIONAL light (type == 1) has parallel rays: the
@@ -30,7 +30,37 @@ LightGeometry lightGeometry(const SceneLightSample& light, const glm::vec3& poin
     // Leaving this as the default -- straight up, no falloff -- lights every
     // surface identically from above, which is a recognisable first result
     // rather than a black screen.
-    (void)light; (void)point;
+
+    switch (light.type) 
+    {
+    // POINT LIGHT (type == 0)
+    case 0: {
+            auto raw_dir  = light.position - point;
+            g.distance    = glm::length(raw_dir);
+            if (g.distance > 0.0f) 
+            {
+                g.direction = raw_dir / g.distance; // Avoids computing length twice
+
+            } else {
+                g.direction = glm::vec3(0.0f, 1.0f, 0.0f); // Fallback direction
+            }
+            
+            auto d        = g.distance;
+            g.attenuation = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);
+            break;
+    }
+
+    // DIRECTIONAL LIGHT (type == 1)
+    case 1: {
+            g.direction   = -glm::normalize(light.direction);
+            g.distance    = std::numeric_limits<float>::infinity();
+            g.attenuation = 1.0f;
+            break;
+    }
+
+    default: 
+            break;
+    }
     return g;
 }
 
@@ -41,7 +71,7 @@ glm::vec3 phongContribution(const SceneLightSample& light,
                             const glm::vec3& viewDir,
                             const glm::vec3& lightDir,
                             float reach) {
-    // TODO(lighting): ambient, diffuse and specular for one light
+    // TODO: (lighting): ambient, diffuse and specular for one light
     // Return ambient + diffuse + specular for this one light.
     //
     // Each term is a light colour times a material coefficient -- mat.ambient,
