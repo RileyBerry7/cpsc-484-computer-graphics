@@ -94,6 +94,19 @@ glm::vec3 phongContribution(const SceneLightSample& light,
     //
     // Returning just the ambient term is a usable checkpoint: flat, unlit
     // silhouettes in roughly the right colours.
-    (void)n; (void)viewDir; (void)lightDir; (void)reach;
-    return light.ambient * mat.ambient * baseColor;
+
+    // 1. Ambient: ignores `reach` (attenuation/shadow factor)
+    glm::vec3 ambient = light.ambient * mat.ambient * baseColor;
+
+    // 2. Diffuse (Lambert): clamped at 0.0f so back-facing surfaces don't subtract light
+    float diff = glm::max(glm::dot(n, lightDir), 0.0f);
+    glm::vec3 diffuse = light.diffuse * (diff * mat.diffuse) * baseColor;
+
+    // 3. Specular (Phong): reflects light around normal, ignores `baseColor`
+    glm::vec3 reflectDir = glm::reflect(-lightDir, n);
+    float spec = glm::pow(glm::max(glm::dot(viewDir, reflectDir), 0.0f), mat.shininess);
+    glm::vec3 specular = light.specular * (spec * mat.specular);
+
+    // Diffuse and specular are scaled by `reach` (attenuation and shadow visibility)
+    return ambient + reach * (diffuse + specular);
 }
