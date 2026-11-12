@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <cmath>
+#include <iostream>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>

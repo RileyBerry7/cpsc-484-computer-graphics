@@ -90,35 +90,66 @@ glm::vec3 Texture::sample(float u, float v) const {
     // blend them. Texel CENTRES sit at (i + 0.5) / size, which is why the
     // -0.5 below matters: without it the image is offset by half a texel.
 
-    // ADRESSING FUNCTION: ensures any uv coordinate is valid
-    // this function determines how the texture wraps when out-of-bounds 
-    // range = [0, 1]
+    // Error Checking
+    if (width <= 0 || height <= 0) {
+        std::cerr << "Invalid texture dimensions, cannot be sampled." << std::endl;
+        return glm::vec3(1.0f,1.0f,1.0f);
+    }
 
-    if (u < 0) u = -u; // mirror across v-axis
-    if (v < 0) v = -v; // mirror across u-axis
-
-    if (u > 1) u = 1; // stretch right edge rightwards
-    if (v > 1) v = 1; // stretch top edge upwards
+    // Ensure any uv coordinate is valid. This determines how the texture wraps 
+    // when out-of-bounds range = [0, 1]
     
+    // Wrap/Repeat uv-space addressing
+    u = u - std::floor(u);
+    v = v - std::floor(v);
+
     /***********************************************************************************
      * MATH EQUATIONS:
      * UV-Space    = Texel-Space / axis-length
      * Texel-Space = UV-Space * axis-length 
-     * Texel-Space(centered) = (UV-coords* width) - 0.5; 
+     * Texel-Space(centered) = (UV-coords * width) - 0.5; 
      ***********************************************************************************/
     
-    // Calculate Centered texel coordinates: range = [0, width - 1]
+    // Calculate Centered texel coords
     float x = (u * width)  - 0.5f; // Horizontal coord 
     float y = (v * height) - 0.5f; // Vertical coord
+    
+    // Ensure texel coords so they are always valid: range = [0, axis-length - 1]
+    
+    // Clamp Texel-space addressing
+    //if (x < 0) x = 0;
+    //if (y < 0) y = 0;
+    //if (x > width - 1) x = width - 1;
+    //if (y > width - 1) y = width - 1;
 
+    // Wrap/Repeat Texel-space addressing 
+    x = x - width  * std::floor((x + 0.5f) / width);
+    y = y - height * std::floor((y + 0.5f) / height);
+
+
+    int raw_lower_x = static_cast<int>(std::floor(x));
+    int raw_lower_y = static_cast<int>(std::floor(y));
+    float tx = x - raw_lower_x; // Horizontal lerp weight
+    float ty = y - raw_lower_y; // Vertical lerp weight
+    int lower_x = (raw_lower_x < 0) ? (width - 1) : raw_lower_x;
+    int lower_y = (raw_lower_y < 0) ? (height - 1) : raw_lower_y;
+    int upper_x = (lower_x + 1 == width) ? 0 : (lower_x + 1);
+    int upper_y = (lower_y + 1 == height) ? 0 : (lower_y + 1);
+
+    // Surrounding texel coords
+    //float lower_x = std::floor(x);
+    //float upper_x = std::ceil(x);
+    //float lower_y = std::floor(y);
+    //float upper_y = std::ceil(y);
+    
     // FILTERING FUNCTION: calculates color at some texture coordinate
 
     // Find four surrounding texels
     std::vector<glm::vec2> surrounding_texels;
-    surrounding_texels.push_back(glm::vec2(std::floor(x), std::floor(y)));
-	surrounding_texels.push_back(glm::vec2(std::ceil(x),  std::floor(y)));
-	surrounding_texels.push_back(glm::vec2(std::floor(x), std::ceil(y)));
-	surrounding_texels.push_back(glm::vec2(std::ceil(x),  std::ceil(y)));
+    surrounding_texels.push_back(glm::vec2(lower_x, lower_y));
+	surrounding_texels.push_back(glm::vec2(upper_x,  lower_y));
+	surrounding_texels.push_back(glm::vec2(lower_x, upper_y));
+	surrounding_texels.push_back(glm::vec2(upper_x,  upper_y));
 
     // Find each texel's color
     std::vector<glm::vec4> colors;
@@ -132,12 +163,9 @@ glm::vec3 Texture::sample(float u, float v) const {
     }
 
     // Linear interpolate to blend final color
-    float t = x - std::floor(x); // Horizontal weight
-    auto top_lerp = colors[2] + t * (colors[3] - colors[2]); // Top lerp 
-    auto bot_lerp = colors[0] + t * (colors[1] - colors[0]); // Bottom lerp 
-    
-    t = y - std::floor(y); // Vertical weight
-    auto final_color = bot_lerp + t * (top_lerp - bot_lerp); // Vertical lerp 
+    auto top_lerp = colors[2] + tx * (colors[3] - colors[2]); // Top lerp 
+    auto bot_lerp = colors[0] + tx * (colors[1] - colors[0]); // Bottom lerp 
+    auto final_color = bot_lerp + ty * (top_lerp - bot_lerp); // Vertical lerp 
 
     return glm::vec3(final_color);
 }
