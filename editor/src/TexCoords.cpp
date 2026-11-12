@@ -89,20 +89,55 @@ glm::vec3 Texture::sample(float u, float v) const {
     // Wrap u and v into [0, 1), find the four surrounding texels, and
     // blend them. Texel CENTRES sit at (i + 0.5) / size, which is why the
     // -0.5 below matters: without it the image is offset by half a texel.
-    (void)u; (void)v;
-    return glm::vec3(1.0f);
 
-    // Wrap coordinates into [0,1]
-    if (u < 0) u = -u;
-    if (v < 0) v = -v;
+    // ADRESSING FUNCTION: ensures any uv coordinate is valid
+    // this function determines how the texture wraps when out-of-bounds 
+    // range = [0, 1]
 
-    if (u > 1) u = 1;
-    if (v > 1) v = 1;
+    if (u < 0) u = -u; // mirror across v-axis
+    if (v < 0) v = -v; // mirror across u-axis
+
+    if (u > 1) u = 1; // stretch right edge rightwards
+    if (v > 1) v = 1; // stretch top edge upwards
     
-    // Shift into texel-center space
+    /***********************************************************************************
+     * MATH EQUATIONS:
+     * UV-Space    = Texel-Space / axis-length
+     * Texel-Space = UV-Space * axis-length 
+     * Texel-Space(centered) = (UV-coords* width) - 0.5; 
+     ***********************************************************************************/
+    
+    // Calculate Centered texel coordinates: range = [0, width - 1]
+    float x = (u * width)  - 0.5f; // Horizontal coord 
+    float y = (v * height) - 0.5f; // Vertical coord
 
-    // Find four surrounding texels + their blend weights
+    // FILTERING FUNCTION: calculates color at some texture coordinate
+
+    // Find four surrounding texels
+    std::vector<glm::vec2> surrounding_texels;
+    surrounding_texels.push_back(glm::vec2(std::floor(x), std::floor(y)));
+	surrounding_texels.push_back(glm::vec2(std::ceil(x),  std::floor(y)));
+	surrounding_texels.push_back(glm::vec2(std::floor(x), std::ceil(y)));
+	surrounding_texels.push_back(glm::vec2(std::ceil(x),  std::ceil(y)));
+
+    // Find each texel's color
+    std::vector<glm::vec4> colors;
+    for (const auto& texel : surrounding_texels) {
+
+        int texel_index = (texel.y * width + texel.x) * 4;
+        colors.push_back(glm::vec4( pixels[texel_index + 0], 
+                                    pixels[texel_index + 1], 
+                                    pixels[texel_index + 2], 
+                                    pixels[texel_index + 3]));
+    }
 
     // Linear interpolate to blend final color
+    float t = x - std::floor(x); // Horizontal weight
+    auto top_lerp = colors[2] + t * (colors[3] - colors[2]); // Top lerp 
+    auto bot_lerp = colors[0] + t * (colors[1] - colors[0]); // Bottom lerp 
+    
+    t = y - std::floor(y); // Vertical weight
+    auto final_color = bot_lerp + t * (top_lerp - bot_lerp); // Vertical lerp 
 
+    return glm::vec3(final_color);
 }
