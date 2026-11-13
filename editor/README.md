@@ -1,5 +1,5 @@
 
-## Assignment 3
+## Assignment 5
 
 ---
 
@@ -9,7 +9,6 @@
 | **Compile/Run Instructions**          | "./editor" or "make clean && make && ./editor"  |
 | **OS**                                | Linux (Windows 11 - WSL)                        |
 | **Collaborators**                     | None                                            |
-| **Optional Functionalities**          | None                                            |
 | **Known Issues**                      | None                                            | 
 | **Additional Functionalties**         | None                                            |
 
@@ -18,31 +17,28 @@
 ### **References/Sources**                
 - LearnOpenGL (Joey de Vries)
 - https://learnopengl.com/
+- The Math of Computer Graphics - TEXTURES and SAMPLERS
+- https://www.youtube.com/watch?v=DuQDx0ZIxa8
 
 ---
 
-### **Why moveKey() returns a new index?:**
+### **An explanation of why cube() returns one UV coordinate per triangle corner rather than one per vertex. Explain your answer in terms of the Cube's faces and shared corners:**
 
-This is because the renderer needs to know the correct key to track after the move. From the renderer's perspective, moveKey() is a black box that destroys the key at the passed in index, so the only way for the renderer to have any idea of where the new key ends up, i.e. where in the sorted vector it ends up, is with the returned new index.
-
----
-
-### **Explantation of gimbal lock:**
-
-Gimbal lock is basically when any of our axis of rotations line up, causing us to lose some degree of rotational freedom. Euler angles represent rotation around 3 axes with pitch, yaw and roll. At certain angles the roll axis will line up with the pitch or yaw axis, causing gimbal lock.
+ A cube has 8 corners, and each corner is shared by 3 perpendicular faces that need to map to different parts of the texture. If we only stored one UV per vertex, all three faces meeting at that corner would be forced to use the exact same texture coordinate, causing heavy stretching. Returning one UV per triangle corner lets the same 3D vertex have different UV coordinates depending on which face is being drawn.
 
 ---
 
-### **Animation guide:**
+### **A description of what the Teapot's wrap seam looks like before it is repaired, and why the repair cannot be represented using one UV coordinate per vertex:**
 
-Animated Objects: plane, sphere, skull.
-Movement: The plane takes off then does a loopty loop, flattens out then does a barrel roll. The skull moves torwards the camera and jump scares it. The sphere(earth) rotates slowly in place.
-Animated Transform: Skull, Plane
-Animated Rotation: Sphere, Plane
-Animated Scale: Skull
-Easing: The plane uses linear, ease-in and ease-in-out on multiple keys.
+Before fixing it, the wrap seam looks like a thin vertical strip down the teapot where the entire texture is squished and backwards. This happens because the triangles at the end of the wrap interpolate from u ≈ 0.99 back down to u = 0.0 instead of going forward to 1.0. You can't fix this with one UV per vertex because the vertices on that seam line need to act as u = 0.0 for the triangles starting the wrap and u = 1.0 for the triangles finishing it, which requires per-corner UVs.
+
+---
+
+### **An explanation of why nearest-neighbor sampling may be difficult to notice on a photograph such as 2k_earth_daymap.jpg but obvious on checker.png. Explain why the tests sample between texel centers:**
+
+2k_earth_daymap.jpg is very high-resolution with smooth, organic color transitions, so individual texels are usually smaller than screen pixels and hard to notice unless you zoom way in. checker.png is low-resolution with sharp, high-contrast black and white edges, which makes nearest-neighbor's blocky "staircase" aliasing obvious. The tests sample between texel centers because sampling right on a texel center gives the exact same color for both nearest-neighbor and bilinear filtering—sampling in between forces bilinear to blend neighbors while nearest-neighbor snaps to one, proving the filter actually works.
 
 ---
 
 ### **Feedback:**
-This was fun but the animation panel was a headache to use, and I am disappointed that I couldn't get my animation to look they way I wanted it to.
+None.
